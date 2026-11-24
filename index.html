@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <title>Atelier — Smart Wardrobe</title>
+  <meta name="description" content="A free, private AI stylist that only recommends clothes you already own.">
+  <meta name="theme-color" content="#f5f1eb" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0f0d0b" media="(prefers-color-scheme: dark)">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Serif+Bengali:wght@400;600&display=swap">
+  <link rel="stylesheet" href="css/app.css">
+  <script>
+    // apply saved appearance before first paint (no flash)
+    try { const a = JSON.parse(localStorage.getItem('appearance') || '{}'); if (a.theme && a.theme !== 'auto') document.documentElement.dataset.theme = a.theme; if (a.accent) document.documentElement.dataset.accent = a.accent; } catch (e) {}
+  </script>
+</head>
+<body>
+  <div id="app">
+    <aside class="side" aria-label="Main">
+      <a href="#/today" class="brand"><span class="mark"><img src="icons/icon-192.png" alt="" width="34" height="34"></span><span class="wordmark">Atelier<small>smart wardrobe</small></span></a>
+      <nav class="side-nav" id="sideNav"></nav>
+      <div class="side-foot"><div id="installChip" class="mb"></div><div class="privacy-chip" id="privacyChip"></div></div>
+    </aside>
+    <header class="topbar">
+      <a href="#/today" class="brand"><span class="mark"><img src="icons/icon-192.png" alt="" width="30" height="30"></span><span class="wordmark">Atelier</span></a>
+      <div class="topbar-right">
+        <span id="netState" class="net" hidden>Offline</span>
+        <button class="iconbtn" id="topInstall" aria-label="Install app" title="Install app" hidden></button>
+        <a href="#/me" class="avatar-btn" id="avatarBtn" aria-label="My style profile"></a>
+      </div>
+    </header>
+    <main id="view" tabindex="-1"><div class="loading-screen"><div class="spinner"></div><p>Opening your wardrobe…</p></div></main>
+    <nav class="tabs" id="tabs" aria-label="Main"></nav>
+  </div>
+  <noscript>This app needs JavaScript.</noscript>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+# Signing key — NEVER publish (updates must be signed with it)
+android/atelier-release.jks
+android/keystore.properties
+*.jks
+*.keystore
+
+# Local tools and build output (APKs go to GitHub Releases, the site to the gh-pages branch)
+android-sdk/
+build/
+dist/
+deploy/
+.claude/
+__pycache__/
+*.pdf
