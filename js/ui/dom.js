@@ -210,3 +210,49 @@ export function emptyState(ic, title, text, action = '') {
 export function pageHead(eyebrow, title, sub = '', actions = '') {
   return `<header class="ph"><div><p class="eyebrow">${eyebrow}</p><h1>${title}</h1>${sub ? `<p class="sub">${sub}</p>` : ''}</div>${actions ? `<div class="ph-act">${actions}</div>` : ''}</header>`;
 }
+
+// ---------- Photos: paste anywhere a photo is asked for ----------
+// Every image picker gets a "Paste" button, and Ctrl+V / long-press-paste drops the copied image into the
+// picker that is on screen (the open sheet first). In the Android app the copied image is read natively.
+async function clipboardImageFile() {
+  try {
+    const d = window.AndroidBridge?.clipboardImage?.();
+    if (d) { const b = await (await fetch(d)).blob(); return new File([b], 'pasted.jpg', { type: b.type || 'image/jpeg' }); }
+  } catch { /* old app */ }
+  if (navigator.clipboard?.read) {
+    try {
+      for (const it of await navigator.clipboard.read()) {
+        const type = it.types.find((t) => t.startsWith('image/'));
+        if (type) { const b = await it.getType(type); return new File([b], 'pasted.' + type.split('/')[1], { type }); }
+      }
+    } catch { /* permission denied */ }
+  }
+  return null;
+}
+function feed(input, files) {
+  const dt = new DataTransfer(); for (const f of files) dt.items.add(f);
+  input.files = dt.files; input.dispatchEvent(new Event('change', { bubbles: true }));
+}
+function activeImageInput() {
+  const scope = [...document.querySelectorAll('.modal-wrap')].pop() || document.getElementById('view');
+  return [...(scope?.querySelectorAll('input[type=file]') || [])].find((i) => /image/.test(i.accept || '') && !i.disabled) || null;
+}
+document.addEventListener('paste', (e) => {
+  const files = [...(e.clipboardData?.items || [])].filter((x) => x.type.startsWith('image/')).map((x) => x.getAsFile()).filter(Boolean);
+  if (!files.length) return;
+  const input = activeImageInput(); if (!input) return;
+  e.preventDefault(); feed(input, input.multiple ? files : files.slice(0, 1)); toast('Pasted image');
+});
+function addPasteButtons(root = document) {
+  for (const input of root.querySelectorAll('input[type=file]:not([data-paste])')) {
+    if (!/image/.test(input.accept || '') || input.closest('.no-paste')) continue;
+    input.dataset.paste = '1';
+    const host = input.closest('label') || input;
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'btn small paste-btn';
+    b.innerHTML = `${icon('copy', 14)} Paste`; b.title = 'Paste a copied image';
+    b.onclick = async () => { const f = await clipboardImageFile(); if (f) { feed(input, [f]); toast('Pasted image'); } else toast('Copy an image first (long-press a photo → Copy), then tap Paste', 4500); };
+    host.insertAdjacentElement('afterend', b);
+  }
+}
+let pasteT = 0;
+new MutationObserver(() => { clearTimeout(pasteT); pasteT = setTimeout(() => addPasteButtons(document), 60); }).observe(document.documentElement, { childList: true, subtree: true });

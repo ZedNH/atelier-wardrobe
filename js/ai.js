@@ -8,7 +8,7 @@ import { myRegion } from './profile.js';
 
 export const CLIP_MODEL = 'Marqo/marqo-fashionCLIP';
 const BG_MODEL = 'briaai/RMBG-1.4';
-const LABEL_VERSION = 7; // bump whenever label prompts change (refreshes the cached text embeddings)
+const LABEL_VERSION = 8; // bump whenever label prompts change (refreshes the cached text embeddings)
 export const MODEL_VERSION = `${CLIP_MODEL}@zs${LABEL_VERSION}`;
 const EMB_VERSION = CLIP_MODEL; // embeddings are comparable only within one model
 export const sameModel = (g) => !!g?.embedding && String(g.modelVersion || '').startsWith(EMB_VERSION);
@@ -53,8 +53,8 @@ const SUBTYPE_PROMPT = {
   'sneakers': 'a pair of casual sneakers', 'running shoes': 'a pair of running shoes', 'canvas shoes': 'a pair of canvas shoes', 'loafers': 'a pair of slip-on loafers',
   'oxford shoes': 'a pair of lace-up oxford dress shoes', 'derby shoes': 'a pair of derby shoes', 'suede shoes': 'a pair of suede shoes', 'chelsea boots': 'a pair of chelsea boots with elastic side panels',
   'boots': 'a pair of ankle boots or lace-up boots that cover the ankle', 'sandals': 'a pair of sandals', 'heels': 'a pair of high heels', 'flats': 'a pair of ballet flats',
-  'belt': 'a leather belt', 'watch': 'a wrist watch', 'bag': 'a handbag', 'scarf': 'a scarf', 'tie': 'a necktie', 'sunglasses': 'a pair of sunglasses', 'jewelry': 'a piece of jewelry',
-  'cap': 'a baseball cap', 'beanie': 'a knitted beanie hat', 'hat': 'a brimmed hat',
+  'belt': 'a leather belt', 'watch': 'a wrist watch', 'bag': 'a handbag', 'scarf': 'a scarf', 'tie': 'a necktie', 'sunglasses': 'a pair of dark tinted sunglasses', 'jewelry': 'a piece of jewelry',
+  'sports bra': 'a sports bra for the gym', 'crop top': 'a short cropped top', 'camisole': 'a thin-strap camisole top', 'tunic': 'a long loose tunic top', 'track pants': 'a pair of athletic track pants with side stripes', 'sports shorts': 'a pair of athletic gym shorts', 'flip-flops': 'a pair of rubber flip-flops', 'slides': 'a pair of slide sandals', 'wedges': 'a pair of wedge-heel shoes', 'mules': 'a pair of backless mule shoes', 'eyeglasses': 'a pair of prescription eyeglasses with clear lenses', 'smartwatch': 'a digital smartwatch', 'backpack': 'a backpack', 'clutch': 'a small clutch purse', 'wallet': 'a wallet', 'necklace': 'a necklace', 'earrings': 'a pair of earrings', 'bracelet': 'a bracelet', 'ring': 'a finger ring', 'cufflinks': 'a pair of cufflinks', 'pocket square': 'a folded pocket square', 'bucket hat': 'a bucket hat', 'headband': 'a headband', 'cap': 'a baseball cap', 'beanie': 'a knitted beanie hat', 'hat': 'a brimmed hat',
   'kurti': "a women's kurti tunic top", 'kurta': 'a long kurta tunic shirt', 'panjabi': "a men's panjabi, a long South Asian kurta shirt", 'fotua': 'a short fotua tunic shirt',
   'salwar': 'a pair of loose salwar trousers', 'churidar': 'a pair of tight churidar trousers', 'pajama': 'a pair of white South Asian pajama trousers', 'palazzo': 'a pair of wide palazzo pants',
   'lungi': 'a checked lungi sarong', 'dhoti': 'a white dhoti', 'saree': 'a saree, a long draped South Asian sari', 'salwar kameez': 'a salwar kameez outfit',

@@ -16,6 +16,7 @@ import { isApp } from '../native.js';
 import { modal } from './dom.js';
 import { checkForUpdate, currentVersion } from '../updater.js';
 import { UPDATE_REPO } from '../config.js';
+import { LLM_PROVIDERS, brainSettings, saveBrainSettings, testBrain } from '../llm.js';
 
 const ACCENTS = [['terracotta', '#b4532a'], ['sage', '#4f6f52'], ['cobalt', '#2f4dba'], ['rose', '#b5446e'], ['noir', '#171412']];
 
@@ -80,15 +81,17 @@ export async function renderSettings(view, r) {
       <div class="set-group"><div class="set-row"><div class="lbl"><b>Notify me</b><span>While the app is open or installed</span></div>${switchEl('bn', s.briefNotify)}</div>
       <div class="set-row"><div class="lbl"><b>Time</b></div><input type="time" id="bt" value="${esc(s.briefTime)}"></div></div></section>
 
-    <section class="card" id="data">${head('refresh', 'Sync & backup')}
-      <p class="small muted">Keep your phone and PC in sync through your own Google Drive — free, no account in this app. ${daysSinceBackup() == null ? '<b>No backup yet.</b>' : `Last backup: <b>${daysSinceBackup() === 0 ? 'today' : daysSinceBackup() + ' days ago'}</b>.`}</p>
-      <ol class="steps-list small" style="margin-top:6px">
-        <li><b>Back up to Google Drive</b><span>${isApp() || /Android|iPhone|iPad/.test(navigator.userAgent) ? 'Opens the share sheet — choose Drive.' : 'Downloads one file — drag it into drive.google.com.'}</span></li>
-        <li><b>On the other device: Restore or sync</b><span>Pick that file from Drive. <i>Merge</i> keeps both devices’ clothes and history; the newest edit wins.</span></li></ol>
-      <div class="row mt"><button class="btn small primary" id="exp">${icon('upload', 16)} Back up to Google Drive</button><label class="btn small">${icon('download', 16)} Restore or sync from a backup<input type="file" accept="application/json,.json" hidden id="imp"></label></div>
-      <div class="row mt"><button class="btn small" id="demo">${icon('sparkles', 16)} ${demoN ? 'Reload' : 'Load'} demo wardrobe (${demoItemsFor(myWear()).length} items)</button>${demoN ? `<button class="btn small" id="undemo">Remove demo items (${demoN})</button>` : ''}</div>
-      <div id="demoProg" class="mt"></div>
-      <div class="row mt"><button class="btn small danger" id="wipe">${icon('trash', 16)} Delete all my data</button></div></section>
+
+
+    <section class="card" id="brain">${head('sparkles', 'AI stylist brain', `<span class="pill ${brainSettings().key ? 'good' : ''}">${brainSettings().key ? 'On' : 'Optional'}</span>`)}
+      <p class="small muted" style="margin-top:0">Connect your own AI — Claude, ChatGPT, Gemini, Grok, DeepSeek or OpenRouter — and the Stylist chat asks it to pick outfits from your closet. Only a text list of your clothes is sent (no photos). Your key stays on this device; the provider bills your account.</p>
+      <div class="form">
+        <label class="f">Provider${select('bprov', Object.entries(LLM_PROVIDERS).map(([k, v]) => [k, v.label]), brainSettings().provider || 'claude')}</label>
+        <label class="f">Model<input id="bmodel" value="${esc(brainSettings().model || LLM_PROVIDERS[brainSettings().provider || 'claude'].model)}"></label>
+        <label class="f" style="grid-column:1/-1">API key<input id="bkey" type="password" autocomplete="off" placeholder="Paste your API key" value="${esc(brainSettings().key || '')}"></label>
+      </div>
+      <p class="tiny muted mt" id="bnote">${esc(LLM_PROVIDERS[brainSettings().provider || 'claude'].note)} <a href="${LLM_PROVIDERS[brainSettings().provider || 'claude'].keyUrl}" target="_blank" rel="noopener">Get a key</a></p>
+      <div class="row mt"><button class="btn small primary" id="bsave">${icon('check', 14)} Save</button><button class="btn small" id="btest">${icon('sparkles', 14)} Test</button>${brainSettings().key ? `<button class="btn small ghost danger" id="bdel">Remove key</button>` : ''}</div></section>
 
     <section class="card">${head('refresh', 'App updates')}
       <div class="set-group">
@@ -100,9 +103,30 @@ export async function renderSettings(view, r) {
         <li>${icon('check', 16)}<span>Photos, wardrobe, wear log and style profile are stored only on this device. No account, no server.</span></li>
         <li>${icon('check', 16)}<span>AI models download once from Hugging Face; inference runs locally. Selfie analysis never stores the photo.</span></li>
         <li>${icon('check', 16)}<span>“Delete all my data” removes everything, instantly.</span></li></ul></section>
+    <section class="card" id="data" style="grid-column:1/-1">${head('refresh', 'Sync & backup')}
+      <p class="small muted">Keep your phone and PC in sync through your own Google Drive — free, no account in this app. ${daysSinceBackup() == null ? '<b>No backup yet.</b>' : `Last backup: <b>${daysSinceBackup() === 0 ? 'today' : daysSinceBackup() + ' days ago'}</b>.`}</p>
+      <ol class="steps-list small" style="margin-top:6px">
+        <li><b>Back up to Google Drive</b><span>${isApp() || /Android|iPhone|iPad/.test(navigator.userAgent) ? 'Opens the share sheet — choose Drive.' : 'Downloads one file — drag it into drive.google.com.'}</span></li>
+        <li><b>On the other device: Restore or sync</b><span>Pick that file from Drive. <i>Merge</i> keeps both devices’ clothes and history; the newest edit wins.</span></li></ol>
+      <div class="row mt"><button class="btn small primary" id="exp">${icon('upload', 16)} Back up to Google Drive</button><label class="btn small">${icon('download', 16)} Restore or sync from a backup<input type="file" accept="application/json,.json" hidden id="imp"></label></div>
+      <div class="row mt"><button class="btn small" id="demo">${icon('sparkles', 16)} ${demoN ? 'Reload' : 'Load'} demo wardrobe (${demoItemsFor(myWear()).length} items)</button>${demoN ? `<button class="btn small" id="undemo">Remove demo items (${demoN})</button>` : ''}</div>
+      <div id="demoProg" class="mt"></div>
+      <div class="row mt"><button class="btn small danger" id="wipe">${icon('trash', 16)} Delete all my data</button></div></section>
     </div>
     <p class="tiny faint mt2" style="text-align:center">Atelier · free & open · runs in any modern browser</p>`;
 
+  // AI brain
+  const bp = view.querySelector('[name=bprov]');
+  bp.onchange = () => { const P = LLM_PROVIDERS[bp.value]; $('#bmodel', view).value = P.model; $('#bnote', view).innerHTML = `${esc(P.note)} <a href="${P.keyUrl}" target="_blank" rel="noopener">Get a key</a>`; };
+  const bget = () => ({ provider: bp.value, model: $('#bmodel', view).value.trim() || LLM_PROVIDERS[bp.value].model, key: $('#bkey', view).value.trim(), enabled: true });
+  $('#bsave', view).onclick = () => { saveBrainSettings(bget()); toast(bget().key ? 'AI stylist on — ask the Stylist anything' : 'Saved'); renderSettings(view, r); };
+  $('#btest', view).onclick = async (e) => {
+    const b = e.currentTarget; const s = bget(); if (!s.key) return toast('Paste your API key first');
+    b.disabled = true; b.innerHTML = '<span class="spinner sm"></span> Testing…';
+    try { await testBrain(s); saveBrainSettings(s); toast('Connected — the Stylist now uses ' + LLM_PROVIDERS[s.provider].label, 4000); } catch (err) { toast('Not working: ' + (err.message || err), 6000); }
+    b.disabled = false; b.innerHTML = `${icon('sparkles', 14)} Test`;
+  };
+  const bd = $('#bdel', view); if (bd) bd.onclick = () => { saveBrainSettings({}); toast('Key removed'); renderSettings(view, r); };
   const uc = $('#updCheck', view); if (uc) uc.onclick = async (e) => { const b = e.currentTarget; b.disabled = true; await checkForUpdate({ manual: true }); b.disabled = false; };
   // language, region, modesty
   bindChips(view, 'lang', async (v) => { await saveSettings({ lang: v }); applyLanguage(); toast(v === 'bn' ? 'বাংলা চালু হয়েছে' : 'English on'); if (v === 'en') location.reload(); });

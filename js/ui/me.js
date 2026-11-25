@@ -21,7 +21,8 @@ export async function render(view, r) {
       <div class="big-av">${initials(p.name) || icon('user', 34)}</div>
       <div><p class="eyebrow">My style</p><h1>${p.name ? esc(p.name) : 'Your style profile'}</h1>
         <div class="facts">${facts.length ? facts.map((f) => `<span class="pill">${esc(f)}</span>`).join('') : '<span class="pill warn">Not set up yet</span>'}${dna ? `<span class="pill ink">${icon('dna', 12)} ${esc(dna.archetype)}</span>` : ''}</div>
-        <div class="row mt"><a class="btn small primary" href="#/profile">${icon('pen', 14)} Edit profile</a><a class="btn small" href="#/settings?quiz=1">${icon('target', 14)} Retune taste</a></div></div>
+        <div class="row mt"><a class="btn small primary" href="#/profile">${icon('pen', 14)} Edit profile</a><a class="btn small" href="#/settings?quiz=1">${icon('target', 14)} Retune taste</a><a class="btn small" href="#/settings">${icon('gear', 14)} Settings</a></div></div>
+      <a class="me-gear" href="#/settings" aria-label="Settings" title="Settings">${icon('gear', 20)}</a>
     </section>
 
     <div class="split section" style="align-items:start">

@@ -82,7 +82,7 @@ function formalityOk(g, occ) {
     if (occ.f >= 4 && g.category === 'headwear' && !['hat', 'tupi'].includes(g.subtype)) return false;
     if (g.subtype === 'tie' && occ.f < 4) return false;
     if (g.subtype === 'tupi' && !occ.trad) return false;
-    return Math.abs((g.formality || 3) - occ.f) <= 2;
+    return Math.abs((g.formality || 3) - occ.f) <= 2 && dressCodeOk(g, occ);
   }
   const f = g.formality || 3;
   const trad = SUBTYPES[g.subtype]?.trad;
@@ -90,13 +90,62 @@ function formalityOk(g, occ) {
   if (f < (occ.trad && trad ? occ.min - 1 : occ.min) || f > occ.max) return false;
   if (g.subtype === 'lungi' && occ.f > 1) return false;
   if ((occ.modest || isModest()) && ['shorts', 'tank top'].includes(g.subtype)) return false;
-  if (occ.active) {
-    const m = SUBTYPES[g.subtype] || {};
-    if (g.category === 'footwear' && !(m.active || g.subtype === 'sneakers')) return false;
-    if (g.category === 'outerwear' && !['fleece', 'raincoat', 'puffer', 'hoodie'].includes(g.subtype)) return false;
+  return dressCodeOk(g, occ);
+}
+
+// ---------- Dress codes: what actually belongs at each occasion (on top of the formality window) ----------
+const GYM_TOP = new Set(['t-shirt', 'graphic tee', 'tank top', 'activewear top', 'sports bra', 'crop top', 'hoodie', 'sweatshirt', 'polo']);
+const GYM_BOTTOM = new Set(['joggers', 'track pants', 'sports shorts', 'shorts', 'leggings']);
+const GYM_EXTRA = new Set(['watch', 'smartwatch', 'sunglasses', 'backpack', 'bag', 'cap', 'headband', 'beanie', 'hijab', 'bucket hat']);
+const SPORTY = new Set(['sports bra', 'activewear top', 'track pants', 'sports shorts', 'joggers', 'running shoes', 'flip-flops', 'slides', 'headband', 'smartwatch']);
+const CASUAL_ONLY = new Set([...SPORTY, 'graphic tee', 'tank top', 'crop top', 'hoodie', 'sweatshirt', 'leggings', 'cap', 'bucket hat', 'backpack', 'beanie', 'shorts', 'cargo pants', 'lungi']);
+const DRESSY_ONLY = new Set(['blazer', 'suit jacket', 'dress shirt', 'dress trousers', 'oxford shoes', 'derby shoes', 'heels', 'tie', 'cufflinks', 'pocket square', 'clutch', 'formal gown', 'cocktail dress', 'sherwani', 'lehenga']);
+export function dressCodeOk(g, occ) {
+  const s = g.subtype, k = occ.key;
+  if (s === 'hijab' || s === 'eyeglasses') return true;
+  if (occ.active || k === 'active') {
+    if (g.category === 'top') return GYM_TOP.has(s);
+    if (g.category === 'bottom') return GYM_BOTTOM.has(s);
+    if (g.category === 'footwear') return !!SUBTYPES[s]?.active || s === 'sneakers';
+    if (g.category === 'outerwear') return ['fleece', 'raincoat', 'puffer', 'bomber'].includes(s);
     if (g.category === 'dress') return false;
+    return GYM_EXTRA.has(s);
   }
+  if (k === 'lounge') return !DRESSY_ONLY.has(s) && !['loafers', 'chelsea boots', 'boots', 'belt', 'watch', 'jewelry', 'necklace', 'earrings', 'bracelet', 'ring'].includes(s);
+  if (k === 'work' || k === 'business') return !CASUAL_ONLY.has(s) && !(k === 'business' && ['jeans', 'canvas shoes', 'sneakers', 'sandals', 'polo'].includes(s));
+  if (k === 'smart_casual' || k === 'date') return !SPORTY.has(s) && !['tank top', 'sports shorts', 'cap', 'backpack', 'lungi'].includes(s);
+  if (occ.f >= 4) { // cocktail, formal, wedding, festivals
+    if (CASUAL_ONLY.has(s) || ['t-shirt', 'jeans', 'sneakers', 'canvas shoes', 'polo', 'henley'].includes(s)) return false;
+    if (['sandals', 'flats'].includes(s) && !occ.trad) return false;
+  }
+  if (k === 'jummah' && ['shorts', 'sports shorts', 'tank top', 'graphic tee'].includes(s)) return false;
   return true;
+}
+
+// ---------- Accessories that finish a look ----------
+const BELT_BOTTOMS = new Set(['jeans', 'chinos', 'dress trousers', 'cargo pants', 'shorts']);
+export function accessorize(items, occ, wx, pool, { max = 2, relax = false } = {}) {
+  const have = new Set(items.map((g) => g.subtype));
+  const avail = pool.filter((g) => (g.category === 'accessory' || g.category === 'headwear') && !items.some((x) => x.id === g.id) && formalityOk(g, occ) && g.subtype !== 'dupatta' && g.subtype !== 'hijab');
+  const base = items.filter((g) => !['accessory', 'headwear'].includes(g.category));
+  const pick = (pred) => { const c = avail.filter(pred); return c.length ? bestCompanions(base, c, occ, 1)[0] : null; };
+  const out = [];
+  const add = (g) => { if (g && out.length < max && !have.has(g.subtype)) { out.push(g); have.add(g.subtype); } };
+  const sunny = relax || (wx && (wx.uv ?? 0) >= 4 && (wx.rainProb ?? 0) < 40);
+  const bottom = base.find((g) => g.category === 'bottom');
+  const tailored = base.some((g) => ['blazer', 'suit jacket'].includes(g.subtype));
+  // order = what a stylist adds first for this kind of day
+  add(pick((g) => occ.active ? g.subtype === 'smartwatch' || g.subtype === 'watch' : g.subtype === 'watch' || (occ.f <= 2 && g.subtype === 'smartwatch')));
+  const longTop = base.some((g) => ['panjabi', 'kurta', 'kurti', 'tunic', 'sherwani', 'salwar kameez', 'anarkali'].includes(g.subtype));
+  if (bottom && BELT_BOTTOMS.has(bottom.subtype) && occ.f >= 2 && !occ.active && !longTop) add(pick((g) => g.subtype === 'belt'));
+  if (occ.f >= 4 && tailored) { add(pick((g) => g.subtype === 'tie')); add(pick((g) => g.subtype === 'pocket square')); }
+  if (sunny && occ.f <= 3) add(pick((g) => g.subtype === 'sunglasses'));
+  if (occ.f >= 3) add(pick((g) => ['necklace', 'earrings', 'bracelet', 'jewelry', 'ring'].includes(g.subtype)));
+  add(pick((g) => occ.f >= 4 ? g.subtype === 'clutch' : occ.active ? g.subtype === 'backpack' : g.subtype === 'bag'));
+  if (wx && wx.feels < 12) add(pick((g) => g.subtype === 'scarf'));
+  // asked for more: anything else that suits the occasion, one of each kind
+  if (relax) while (out.length < max) { const g = pick((x) => !have.has(x.subtype) && x.subtype !== 'eyeglasses'); if (!g) break; add(g); }
+  return out;
 }
 
 export function eligible(ctx) {
@@ -362,12 +411,13 @@ export function generate(ctx, { maxBases = 160 } = {}) {
     const outerOpts = outerRequired ? outers : [null, ...outers];
     if (!outerOpts.length) outerOpts.push(null);
     const dup = dupattas.length && wantsDupatta(base.items);
-    const acc = dup ? bestCompanions(base.items, dupattas, occ, 1)[0] : accAll.length ? bestCompanions(base.items, accAll.filter((a) => a.subtype !== 'dupatta'), occ, 1)[0] : null;
+    const acc = dup ? bestCompanions(base.items, dupattas, occ, 1)[0] : null;
     const head = headAll.length ? bestCompanions(base.items, headAll, occ, 1)[0] : null;
     for (const s of shoes) for (const o of outerOpts) {
       if (!s && shoesAll.length === 0 && !ctx.allowNoShoes) continue;
       const items = [o, ...base.items, s, head].filter(Boolean);
-      if (acc && (dup || mustOf('accessory').length || Math.random() < 0.6)) items.push(acc);
+      if (acc) items.push(acc);
+      for (const m of mustOf('accessory')) if (!items.includes(m)) items.push(m);
       const sc = scoreOutfit(items, cctx);
       cands.push({ items, ...sc });
     }
@@ -408,13 +458,26 @@ export function recommend(ctx) {
     if (isStretch) best = { ...best, stretch: true };
     chosen.push(best);
   }
-  return { outfits: chosen.map((c) => ({ ...c, rationale: rationale(c, ctx, layer) })), eligible: el, total: cands.length };
+  // finish each look with the accessories a stylist would add (watch, belt, sunglasses, bag…)
+  const accN = ctx.accessories ?? ({ none: 0, few: 1, auto: 2, more: 3 }[state.settings.accessories || 'auto']);
+  const accPool = [...(el.slots.accessory || []), ...(el.slots.headwear || [])];
+  const finish = (c) => {
+    if (!accN || !accPool.length) return c;
+    const extra = accessorize(c.items, el.occ, ctx.ignoreWeather ? null : el.wx, accPool, { max: accN });
+    return extra.length ? { ...c, items: [...c.items, ...extra] } : c;
+  };
+  return { outfits: chosen.map((c) => finish(c)).map((c) => ({ ...c, rationale: rationale(c, ctx, layer) })), eligible: el, total: cands.length };
 }
 
 export const outfitKey = (items) => items.filter((g) => ['top', 'bottom', 'dress', 'outerwear', 'footwear'].includes(g.category)).map((g) => g.id).sort().join('|');
 
 function whyEmpty(el) {
   const S = el.slots;
+  if (el.occ?.active) {
+    if (!S.bottom.length) return 'No gym bottoms yet — add joggers, track pants, sports shorts or leggings for workout looks.';
+    if (!S.top.length) return 'No gym tops yet — add a t-shirt, tank or activewear top.';
+    if (!S.footwear.length) return 'No sports shoes yet — add sneakers or running shoes for workout looks.';
+  }
   if (!S.footwear.length) return 'No clean footwear fits this occasion and weather.';
   if (!S.dress.length && (!S.top.length || !S.bottom.length)) {
     if (!S.top.length) return 'No clean top fits this occasion and weather.';

@@ -394,6 +394,65 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void openUrl(String url) { openExternal(url); }
 
+        // HTTPS POST to an AI provider for the "AI stylist brain" (no browser CORS limits). Result -> window.__httpDone(id, status, body)
+        @JavascriptInterface
+        public void httpRequest(String id, String method, String url, String headersJson, String body) {
+            new Thread(() -> {
+                int status = 0; String out;
+                try {
+                    Uri u = Uri.parse(url); String h = String.valueOf(u.getHost());
+                    String[] allowed = {"api.anthropic.com", "api.openai.com", "generativelanguage.googleapis.com", "api.x.ai", "api.deepseek.com", "openrouter.ai"};
+                    boolean ok = "https".equals(u.getScheme()); boolean listed = false;
+                    for (String a : allowed) if (h.equals(a)) listed = true;
+                    if (!ok || !listed) throw new IOException("Blocked address");
+                    java.net.HttpURLConnection c = (java.net.HttpURLConnection) new java.net.URL(url).openConnection();
+                    c.setRequestMethod("POST".equalsIgnoreCase(method) ? "POST" : "GET");
+                    c.setConnectTimeout(20000); c.setReadTimeout(120000);
+                    c.setRequestProperty("Content-Type", "application/json");
+                    org.json.JSONObject hs = new org.json.JSONObject(headersJson == null ? "{}" : headersJson);
+                    java.util.Iterator<String> it = hs.keys();
+                    while (it.hasNext()) { String k = it.next(); c.setRequestProperty(k, hs.getString(k)); }
+                    if (body != null && "POST".equalsIgnoreCase(method)) {
+                        c.setDoOutput(true);
+                        try (OutputStream os = c.getOutputStream()) { os.write(body.getBytes("UTF-8")); }
+                    }
+                    status = c.getResponseCode();
+                    InputStream in = status >= 400 ? c.getErrorStream() : c.getInputStream();
+                    java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+                    if (in != null) { byte[] buf = new byte[16384]; int n; while ((n = in.read(buf)) > 0) bos.write(buf, 0, n); in.close(); }
+                    out = bos.toString("UTF-8");
+                } catch (Exception e) { status = 0; out = String.valueOf(e.getMessage()); }
+                js("window.__httpDone&&__httpDone(" + org.json.JSONObject.quote(id) + "," + status + "," + org.json.JSONObject.quote(out) + ")");
+            }).start();
+        }
+
+        // The image currently on the clipboard (copied from Gallery, Chrome, a shopping app…) as a JPEG data URL, or "".
+        @JavascriptInterface
+        public String clipboardImage() {
+            try {
+                ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                if (cm == null || !cm.hasPrimaryClip()) return "";
+                ClipData clip = cm.getPrimaryClip();
+                for (int i = 0; clip != null && i < clip.getItemCount(); i++) {
+                    Uri uri = clip.getItemAt(i).getUri();
+                    if (uri == null) continue;
+                    android.graphics.BitmapFactory.Options o = new android.graphics.BitmapFactory.Options();
+                    o.inJustDecodeBounds = true;
+                    try (InputStream in = getContentResolver().openInputStream(uri)) { android.graphics.BitmapFactory.decodeStream(in, null, o); }
+                    if (o.outWidth <= 0) continue;
+                    int s = 1; while (Math.max(o.outWidth, o.outHeight) / s > 1800) s *= 2;
+                    android.graphics.BitmapFactory.Options o2 = new android.graphics.BitmapFactory.Options(); o2.inSampleSize = s;
+                    android.graphics.Bitmap bmp;
+                    try (InputStream in = getContentResolver().openInputStream(uri)) { bmp = android.graphics.BitmapFactory.decodeStream(in, null, o2); }
+                    if (bmp == null) continue;
+                    java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+                    bmp.compress(android.graphics.Bitmap.CompressFormat.JPEG, 90, bos);
+                    return "data:image/jpeg;base64," + Base64.encodeToString(bos.toByteArray(), Base64.NO_WRAP);
+                }
+            } catch (Exception ignored) { }
+            return "";
+        }
+
         @JavascriptInterface
         public String version() {
             try { return getPackageManager().getPackageInfo(getPackageName(), 0).versionName; } catch (Exception e) { return "0"; }

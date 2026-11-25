@@ -160,7 +160,7 @@ export function defaultFabric(sub) {
   if (['sweater', 'cardigan', 'turtleneck', 'beanie'].includes(sub)) return 'knit';
   if (['leather jacket', 'loafers', 'oxford shoes', 'derby shoes', 'chelsea boots', 'boots', 'belt', 'heels'].includes(sub)) return 'leather';
   if (['overcoat', 'blazer', 'suit jacket', 'dress trousers', 'scarf'].includes(sub)) return 'wool';
-  if (['puffer', 'parka', 'raincoat', 'fleece', 'activewear top', 'leggings', 'running shoes', 'sneakers', 'bag', 'watch', 'sunglasses', 'jewelry'].includes(sub)) return 'synthetic';
+  if (['puffer', 'parka', 'raincoat', 'fleece', 'activewear top', 'leggings', 'running shoes', 'sneakers', 'bag', 'watch', 'sunglasses', 'jewelry', 'sports bra', 'track pants', 'sports shorts', 'flip-flops', 'slides', 'eyeglasses', 'smartwatch', 'backpack', 'necklace', 'earrings', 'bracelet', 'ring', 'cufflinks', 'headband'].includes(sub)) return 'synthetic';
   if (['linen shirt'].includes(sub)) return 'linen';
   if (['lehenga', 'sherwani', 'anarkali'].includes(sub)) return 'silk';
   if (['nagra', 'kolhapuri'].includes(sub)) return 'leather';

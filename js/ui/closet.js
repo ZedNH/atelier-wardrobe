@@ -23,7 +23,9 @@ function colorVerdict(g) {
   return `<p class="mt"><span class="pill ${t[0]}">${icon(t[1], 12)} ${esc(t[2])}</span></p>`;
 }
 
-const F = { q: '', cat: 'all', sub: 'all', color: 'all', season: 'all', avail: 'active', sort: 'recent' };
+const F = { q: '', cat: 'all', sub: 'all', color: 'all', season: 'all', avail: 'active', sort: 'recent', status: 'active' };
+const SEL = { on: false, ids: new Set() };
+const STATUS_TABS = [['active', 'In closet'], ['sold', 'Sold'], ['donated', 'Donated'], ['lent', 'Lent out'], ['archived', 'Archived']];
 const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : s);
 const LSTATE = { clean: '', worn: 'worn', dirty: 'dirty', washing: 'washing' };
 
@@ -47,6 +49,7 @@ export async function renderCloset(view) {
     ${pageHead('Your wardrobe', 'Closet', `${act.length} pieces${value ? ` · ${fmtMoney(value)} in value` : ''}`, `${pending ? `<a class="btn small" href="#/review">${icon('search', 16)} Review (${pending})</a>` : ''}
       <a class="btn small" href="#/shop">${icon('bag', 16)} What to buy</a><button class="btn small" id="laundryBtn">${icon('laundry', 16)} Laundry${laundryN ? ` (${laundryN})` : ''}</button><a class="btn small primary" href="#/add">${icon('plus', 16)} Add</a>`)}
     ${pending ? `<a class="banner" href="#/review" style="margin:0 0 14px"><span class="row nowrap">${icon('info', 18)}<span><b>${pending} item${pending > 1 ? 's' : ''}</b> marked “Check” ${pending > 1 ? 'are' : 'is'} in your closet but not used in outfits until confirmed.</span></span><span class="btn small primary">Review</span></a>` : ''}
+    <div class="chips status-tabs" data-chips="status">${STATUS_TABS.filter(([k]) => k === 'active' || state.garments.some((g) => g.status === k)).map(([k, l]) => `<button type="button" class="chip ${F.status === k ? 'on' : ''}" data-v="${k}">${l} <span class="n">${state.garments.filter((g) => g.status === k).length}</span></button>`).join('')}</div>
     <div class="filters">
       <div class="search">${icon('search', 18)}<input id="q" placeholder="${state.settings.aiEnabled ? 'Search, e.g. “red striped shirt” (AI)' : 'Search by name, color, type…'}" value="${esc(F.q)}"></div>
       <div class="chips cat-chips" data-chips="cat">${[['all', 'All', act.length], ...CATEGORIES.map((c) => [c, CATEGORY_LABEL[c], act.filter((g) => g.category === c).length])].filter(([c, , n]) => c === 'all' || n).map(([c, l, n]) => `<button type="button" class="chip ${F.cat === c ? 'on' : ''}" data-v="${c}">${gicon(c, 16)} ${l} <span class="faint">${n}</span></button>`).join('')}</div>
@@ -54,20 +57,22 @@ export async function renderCloset(view) {
       <div class="row">
         ${select('color', [['all', 'Any color'], ...colorsPresent.map((c) => [c, c])], F.color)}
         ${select('season', [['all', 'Any season'], ...SEASONS.map((s) => [s, s])], F.season)}
-        ${select('avail', [['active', 'Active'], ['clean', 'Clean only'], ['laundry', 'In laundry'], ['archived', 'Archived / donated / lent'], ['review', 'Needs review'], ['all', 'Everything']], F.avail)}
+        ${select('avail', [['active', 'All in closet'], ['clean', 'Clean only'], ['laundry', 'In laundry'], ['review', 'Needs review']], F.avail === 'archived' || F.avail === 'all' ? 'active' : F.avail)}
         ${select('sort', [['recent', 'Newest'], ['most', 'Most worn'], ['least', 'Least worn'], ['cpw', 'Cost per wear'], ['color', 'Color']], F.sort)}
       </div>
     </div>
-    <p class="count-line" id="count"></p>
-    <div class="closet-grid" id="grid"></div>`;
+    <div class="row between"><p class="count-line" id="count"></p><button class="btn small ghost" id="selBtn">${icon('check', 14)} Select</button></div>
+    <div class="closet-grid" id="grid"></div>
+    <div class="sel-bar hide" id="selBar"><b id="selN">0 selected</b><div class="row nowrap" id="selActs"></div></div>`;
   const draw = async () => {
     let list = state.garments.slice();
     const lw = lastWornMap();
-    if (F.avail === 'active') list = list.filter((g) => g.status === 'active');
-    if (F.avail === 'clean') list = list.filter((g) => g.status === 'active' && !g.needsReview && (!g.laundry || ['clean', 'worn'].includes(g.laundry.state)));
-    if (F.avail === 'laundry') list = list.filter((g) => g.status === 'active' && ['dirty', 'washing', 'worn'].includes(g.laundry?.state));
-    if (F.avail === 'archived') list = list.filter((g) => g.status !== 'active');
-    if (F.avail === 'review') list = list.filter((g) => g.needsReview);
+    list = list.filter((g) => (g.status || 'active') === F.status);
+    if (F.status === 'active') {
+      if (F.avail === 'clean') list = list.filter((g) => !g.needsReview && (!g.laundry || ['clean', 'worn'].includes(g.laundry.state)));
+      if (F.avail === 'laundry') list = list.filter((g) => ['dirty', 'washing', 'worn'].includes(g.laundry?.state));
+      if (F.avail === 'review') list = list.filter((g) => g.needsReview);
+    }
     if (F.cat !== 'all') list = list.filter((g) => g.category === F.cat);
     // second row: the actual types present (Polo, T-shirt, Jeans, Cargo…) with icons and counts
     const types = {}; for (const g of list) types[g.subtype] = (types[g.subtype] || 0) + 1;
@@ -96,12 +101,45 @@ export async function renderCloset(view) {
       if (F.sort === 'color') list.sort((a, b) => primaryColor(a).lab[0] - primaryColor(b).lab[0]);
     }
     $('#count', view).textContent = `${list.length} item${list.length === 1 ? '' : 's'}${ranked ? ' · ranked by AI similarity' : ''}`;
-    $('#grid', view).innerHTML = list.length ? list.map((g) => cell(g, g.status !== 'active' ? 'dim' : '')).join('') : '';
+    $('#grid', view).innerHTML = list.length ? list.map((g) => F.status === 'active' ? cell(g, SEL.ids.has(g.id) ? 'sel' : '') : `<div class="gwrap">${cell(g, 'dim ' + (SEL.ids.has(g.id) ? 'sel' : ''))}<button class="btn small block restore" data-restore="${g.id}">${icon('refresh', 14)} Restore to closet</button></div>`).join('') : '';
+    $$('[data-restore]', view).forEach((b) => b.onclick = async (e) => { e.preventDefault(); const g = garmentById(b.dataset.restore); g.status = 'active'; g.archivedAt = null; await saveGarment(g); toast(`${garmentName(g)} is back in your closet`); renderCloset(view); });
     if (!list.length) $('#grid', view).innerHTML = `<div style="grid-column:1/-1">${emptyState('hanger', state.garments.length ? 'Nothing matches' : 'Your closet is empty', state.garments.length ? 'Try clearing a filter.' : 'Photograph a garment, import from your gallery, or load the demo wardrobe.', state.garments.length ? '' : '<div class="row center"><a class="btn primary" href="#/add">Add clothes</a><a class="btn" href="#/settings?demo=1">Load demo</a></div>')}</div>`;
     hydrateImages(view);
   };
   let t; $('#q', view).addEventListener('input', (e) => { F.q = e.target.value.trim(); clearTimeout(t); t = setTimeout(draw, 300); });
   bindChips(view, 'cat', (v) => { F.cat = v; F.sub = 'all'; draw(); });
+  bindChips(view, 'status', (v) => { F.status = v; F.sub = 'all'; SEL.ids.clear(); draw(); syncSel(); });
+  // select mode: tap pieces, then sell / donate / archive / restore / delete them together
+  const syncSel = () => {
+    $('#selBtn', view).innerHTML = SEL.on ? 'Done' : `${icon('check', 14)} Select`;
+    view.classList.toggle('selecting', SEL.on);
+    const bar = $('#selBar', view); bar.classList.toggle('hide', !SEL.on);
+    $('#selN', view).textContent = `${SEL.ids.size} selected`;
+    const acts = F.status === 'active' ? [['sold', 'Sold', 'bag'], ['donated', 'Donate', 'leaf'], ['archived', 'Archive', 'book']] : [['active', 'Restore', 'refresh']];
+    $('#selActs', view).innerHTML = acts.map(([k, l, ic]) => `<button class="btn small" data-bulk="${k}" ${SEL.ids.size ? '' : 'disabled'}>${icon(ic, 14)} ${l}</button>`).join('') + `<button class="btn small danger" data-bulk="delete" ${SEL.ids.size ? '' : 'disabled'}>${icon('trash', 14)} Delete</button>`;
+    $$('[data-bulk]', view).forEach((b) => b.onclick = () => bulk(b.dataset.bulk));
+  };
+  const bulk = async (k) => {
+    const items = [...SEL.ids].map(garmentById).filter(Boolean); if (!items.length) return;
+    if (k === 'delete') {
+      if (!(await confirmBox(`Permanently delete ${items.length} item${items.length > 1 ? 's' : ''} and their photos from this device? This cannot be undone. “Archive” keeps your history instead.`, 'Delete'))) return;
+      for (const g of items) await removeGarment(g);
+      toast(`Deleted ${items.length}`);
+    } else {
+      for (const g of items) { g.status = k; g.archivedAt = k === 'active' ? null : Date.now(); await saveGarment(g); }
+      toast(k === 'active' ? `Restored ${items.length}` : `Moved ${items.length} to ${STATUS_TABS.find(([s]) => s === k)[1]}`);
+    }
+    SEL.ids.clear(); SEL.on = false; renderCloset(view);
+  };
+  $('#selBtn', view).onclick = () => { SEL.on = !SEL.on; SEL.ids.clear(); draw(); syncSel(); };
+  $('#grid', view).addEventListener('click', (e) => {
+    if (!SEL.on) return;
+    const c = e.target.closest('.gcell'); if (!c) return;
+    e.preventDefault(); const id = c.dataset.id;
+    if (SEL.ids.has(id)) SEL.ids.delete(id); else SEL.ids.add(id);
+    c.classList.toggle('sel', SEL.ids.has(id)); syncSel();
+  });
+  syncSel();
   for (const k of ['color', 'season', 'avail', 'sort']) view.querySelector(`[name=${k}]`).addEventListener('change', (e) => { F[k] = e.target.value; draw(); });
   $('#laundryBtn', view).onclick = () => laundryModal(() => renderCloset(view));
   if (F.q && state.settings.aiEnabled && !ai.aiStatus.ready) ai.loadAI().catch(() => {});
@@ -149,7 +187,7 @@ export async function renderItem(view, r) {
       </div>
       <div>
         <p class="eyebrow">${esc(CATEGORY_LABEL[g.category])} · ${esc(g.subtype)}</p>
-        <div class="row between"><h1 id="title">${esc(garmentName(g))}</h1><button class="btn small" id="fav">${g.favorite ? icon('heartFill', 16) + ' Favorite' : icon('heart', 16) + ' Favorite'}</button></div>
+        <div class="row between"><h1 id="title">${esc(garmentName(g))}</h1><div class="row nowrap"><button class="btn small icon" id="rmMenu" aria-label="Remove or sell" title="Sold, donate, archive or delete">${icon('trash', 16)}</button><button class="btn small" id="fav">${g.favorite ? icon('heartFill', 16) + ' Favorite' : icon('heart', 16) + ' Favorite'}</button></div></div>
         ${low.size && Object.keys(g.attrSource || {}).length < low.size ? '<p class="small"><span class="pill warn">Highlighted fields had low AI confidence — please check them</span></p>' : ''}
         <form class="form card" id="attrs">
           <label class="f">Name<input name="name" value="${esc(g.name)}" placeholder="${esc(garmentName({ ...g, name: '' }))}"></label>
@@ -219,12 +257,21 @@ export async function renderItem(view, r) {
   });
   $('#fixCut', view).onclick = () => fixCutoutModal(g, () => renderItem(view, r));
   const rt = $('#retag', view); if (rt) rt.onclick = async () => { rt.disabled = true; rt.innerHTML = '<span class="spinner sm"></span> Tagging…'; try { await retagGarment(g); toast('Re-tagged (your own corrections were kept)'); } catch (e) { toast('AI tagging failed: ' + e.message); } renderItem(view, r); };
-  $('#delete', view).onclick = async () => {
+  const delNow = async () => {
     if (!(await confirmBox(`Permanently delete “${garmentName(g)}” and its photos from this device? This cannot be undone. Archiving is the safer option.`, 'Delete'))) return;
-    await del('garments', g.id); await del('images', g.cutout); await del('images', g.original);
-    state.garments = state.garments.filter((x) => x.id !== g.id);
-    toast('Deleted'); go('#/closet');
+    await removeGarment(g); toast('Deleted'); go('#/closet');
   };
+  $('#delete', view).onclick = delNow;
+  $('#rmMenu', view).onclick = () => modal(`<h2>Remove from closet</h2><p class="small muted">Sold, donated, lent and archived pieces keep their history and can be restored any time from the Closet tabs.</p>
+    <div class="rm-list">${[['sold', 'Mark as sold', 'bag'], ['donated', 'Donated', 'leaf'], ['lent', 'Lent to someone', 'user'], ['archived', 'Archive (keep, hide from outfits)', 'book']].map(([k, l, ic]) => `<button class="pk-row" data-st="${k}"><span class="pk-ic">${icon(ic, 18)}</span><span class="pk-t">${l}</span></button>`).join('')}
+    <button class="pk-row danger-row" data-st="delete"><span class="pk-ic">${icon('trash', 18)}</span><span class="pk-t">Delete permanently</span></button></div>`, {
+    onMount: (m, close) => $$('[data-st]', m).forEach((b) => b.onclick = async () => {
+      close(); const k = b.dataset.st;
+      if (k === 'delete') return delNow();
+      g.status = k; g.archivedAt = Date.now(); await saveGarment(g);
+      toast(`Moved to ${STATUS_TABS.find(([s]) => s === k)[1]} — restore it any time from the Closet`); go('#/closet');
+    }),
+  });
   const minis = $('#minis', view);
   if (minis) for (const o of outfits) {
     const items = o.items.map((i) => garmentById(i.garmentId)).filter(Boolean);
@@ -276,4 +323,11 @@ export async function fixCutoutModal(g, onDone) {
       });
     },
   });
+}
+
+// Permanently remove a garment and all its pictures
+export async function removeGarment(g) {
+  await del('garments', g.id);
+  for (const k of [g.cutout, g.original, `${g.id}:thumb`]) if (k) await del('images', k);
+  state.garments = state.garments.filter((x) => x.id !== g.id);
 }

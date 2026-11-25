@@ -4,6 +4,7 @@ const P = {
   moon: '<path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z"/>',
   hanger: '<path d="M12 7.5a2 2 0 1 1 2-2c0 1-1 1.5-2 2.2V9"/><path d="M12 9 3 15.2c-.9.6-.5 1.8.6 1.8h16.8c1.1 0 1.5-1.2.6-1.8L12 9Z"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
+  copy: '<rect x="8.5" y="8.5" width="12" height="12" rx="2.5"/><path d="M15.5 8.5V6a2.5 2.5 0 0 0-2.5-2.5H6A2.5 2.5 0 0 0 3.5 6v7A2.5 2.5 0 0 0 6 15.5h2.5"/>',
   sparkles: '<path d="M10 3.5 11.6 8a2 2 0 0 0 1.3 1.3L17.5 11l-4.6 1.6a2 2 0 0 0-1.3 1.3L10 18.5 8.4 13.9A2 2 0 0 0 7.1 12.6L2.5 11l4.6-1.6A2 2 0 0 0 8.4 8L10 3.5Z"/><path d="M18.5 3v4M16.5 5h4M19 16v3M17.5 17.5h3"/>',
   chart: '<path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/>',
   calendar: '<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
@@ -111,6 +112,7 @@ const G = {
   watch: '<path d="M9 2.5h6l.5 4.5M9 2.5 8.5 7M9 21.5h6l.5-4.5M9 21.5 8.5 17"/><circle cx="12" cy="12" r="5"/><path d="M12 9.5V12l1.5 1"/>',
   scarf: '<path d="M7 3h10v6l-3 2v10.5h-4V11L7 9V3Z"/><path d="M10 17.5h4M10 19.5h4M7 6h10"/>',
   tie: '<path d="M10 2.5h4l-1 3 2.5 11L12 21l-3.5-4.5L11 5.5l-1-3Z"/>',
+  shades: '<path d="M2.5 11h19"/><path d="M3 11h7.5l-.6 3.6a2.5 2.5 0 0 1-2.5 2H6a2.5 2.5 0 0 1-2.5-2.1L3 11ZM13.5 11H21l-.5 3.5a2.5 2.5 0 0 1-2.5 2.1h-1.4a2.5 2.5 0 0 1-2.5-2L13.5 11Z" fill="currentColor" fill-opacity=".35"/>',
   glasses: '<circle cx="6" cy="13" r="3.5"/><circle cx="18" cy="13" r="3.5"/><path d="M9.5 13h5M2.5 12 4 8M21.5 12 20 8"/>',
   jewelry: '<circle cx="12" cy="15" r="6"/><path d="M9.5 6 12 9.5 14.5 6 13 3.5h-2L9.5 6Z"/>',
   cap: '<path d="M3.5 15.5c0-5 3.6-9 8.5-9s7.5 3.5 7.5 7.5v1.5H3.5Z"/><path d="M19.5 15.5h2.5c0 1.2-1 2-2.5 2H6M12 6.5v1.5"/>',
@@ -121,6 +123,7 @@ const G = {
   hanger: '<path d="M12 7.5a2 2 0 1 1 2-2c0 1-1 1.5-2 2.2V9"/><path d="M12 9 3 15.2c-.9.6-.5 1.8.6 1.8h16.8c1.1 0 1.5-1.2.6-1.8L12 9Z"/>',
 };
 const SUB_ICON = {
+  'sports bra': 'tank', 'crop top': 'tank', 'camisole': 'tank', 'tunic': 'tunic', 'track pants': 'joggers', 'sports shorts': 'shorts', 'flip-flops': 'sandal', 'slides': 'sandal', 'wedges': 'heel', 'mules': 'loafer', 'eyeglasses': 'glasses', 'smartwatch': 'watch', 'backpack': 'bag', 'clutch': 'bag', 'wallet': 'bag', 'necklace': 'jewelry', 'earrings': 'jewelry', 'bracelet': 'jewelry', 'ring': 'jewelry', 'cufflinks': 'jewelry', 'pocket square': 'tie', 'bucket hat': 'hat', 'headband': 'beanie',
   't-shirt': 'tee', 'graphic tee': 'tee', 'fotua': 'tee', 'tank top': 'tank', 'activewear top': 'tank', 'polo': 'polo',
   'oxford shirt': 'shirt', 'dress shirt': 'shirt', 'linen shirt': 'shirt', 'blouse': 'blouse', 'henley': 'sweater', 'sweater': 'sweater', 'turtleneck': 'sweater', 'sweatshirt': 'sweater', 'hoodie': 'hoodie',
   'kurti': 'tunic', 'kurta': 'tunic', 'panjabi': 'tunic', 'salwar kameez': 'tunic',
@@ -131,10 +134,19 @@ const SUB_ICON = {
   'cardigan': 'jacket', 'denim jacket': 'jacket', 'leather jacket': 'jacket', 'bomber': 'jacket', 'fleece': 'jacket', 'puffer': 'jacket',
   'sneakers': 'sneaker', 'running shoes': 'sneaker', 'canvas shoes': 'sneaker', 'boots': 'boot', 'chelsea boots': 'boot', 'heels': 'heel', 'sandals': 'sandal', 'kolhapuri': 'sandal',
   'loafers': 'loafer', 'oxford shoes': 'loafer', 'derby shoes': 'loafer', 'suede shoes': 'loafer', 'flats': 'loafer', 'nagra': 'loafer',
-  'bag': 'bag', 'belt': 'belt', 'watch': 'watch', 'scarf': 'scarf', 'dupatta': 'scarf', 'shawl': 'scarf', 'tie': 'tie', 'sunglasses': 'glasses', 'jewelry': 'jewelry',
+  'bag': 'bag', 'belt': 'belt', 'watch': 'watch', 'scarf': 'scarf', 'dupatta': 'scarf', 'shawl': 'scarf', 'tie': 'tie', 'sunglasses': 'shades', 'jewelry': 'jewelry',
   'cap': 'cap', 'beanie': 'beanie', 'hat': 'hat', 'hijab': 'hijab', 'tupi': 'tupi',
 };
 const CAT_ICON = { all: 'hanger', top: 'tee', bottom: 'trousers', outerwear: 'jacket', dress: 'dress', footwear: 'sneaker', accessory: 'bag', headwear: 'cap' };
+// Product-style illustration of a clothing type in a real colour (used for shopping ideas)
+let artN = 0;
+const mix = (hex, k) => { const n = parseInt(hex.slice(1), 16); const c = [n >> 16, (n >> 8) & 255, n & 255].map((v) => Math.round(k >= 0 ? v + (255 - v) * k : v * (1 + k))); return '#' + c.map((v) => v.toString(16).padStart(2, '0')).join(''); };
+export function productArt(key, hex, size = 96) {
+  const body = G[SUB_ICON[key] || CAT_ICON[key] || key] || G.hanger; const id = 'pa' + ++artN;
+  const n = parseInt(hex.slice(1), 16); const lum = 0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255);
+  const line = lum > 200 ? '#9a958c' : lum < 50 ? mix(hex, 0.35) : mix(hex, -0.45);
+  return `<svg class="pa" width="${size}" height="${size}" viewBox="-1 -1 26 26" aria-hidden="true"><defs><linearGradient id="${id}g" x1="0" y1="0" x2=".9" y2="1"><stop offset="0" stop-color="${mix(hex, 0.28)}"/><stop offset=".55" stop-color="${hex}"/><stop offset="1" stop-color="${mix(hex, -0.3)}"/></linearGradient><filter id="${id}s" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy=".9" stdDeviation=".7" flood-color="#000" flood-opacity=".28"/></filter></defs><g fill="url(#${id}g)" stroke="${line}" stroke-width=".6" stroke-linejoin="round" stroke-linecap="round" filter="url(#${id}s)">${body}</g></svg>`;
+}
 export const hasGicon = (k) => !!(SUB_ICON[k] || CAT_ICON[k] || G[k]);
 // icon for a clothing type or category
 export function gicon(key, size = 20, cls = '') {

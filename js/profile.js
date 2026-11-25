@@ -30,9 +30,9 @@ export const WEARS = {
 export const defaultWear = (gender) => (gender === 'women' ? 'women' : gender === 'men' ? 'men' : 'all');
 export const myWear = () => profile().wear || defaultWear(profile().gender);
 
-const WOMEN_CODED = new Set(['blouse', 'skirt', 'casual dress', 'shirt dress', 'maxi dress', 'cocktail dress', 'formal gown', 'heels', 'flats', 'leggings', 'jumpsuit', 'jewelry',
+const WOMEN_CODED = new Set(['sports bra', 'crop top', 'camisole', 'wedges', 'clutch', 'earrings', 'blouse', 'skirt', 'casual dress', 'shirt dress', 'maxi dress', 'cocktail dress', 'formal gown', 'heels', 'flats', 'leggings', 'jumpsuit', 'jewelry',
   'kurti', 'salwar', 'palazzo', 'saree', 'salwar kameez', 'anarkali', 'lehenga', 'dupatta', 'hijab']);
-const MEN_CODED = new Set(['tie', 'suit jacket', 'oxford shoes', 'derby shoes', 'panjabi', 'fotua', 'pajama', 'lungi', 'dhoti', 'sherwani', 'koti', 'tupi']);
+const MEN_CODED = new Set(['cufflinks', 'pocket square', 'tie', 'suit jacket', 'oxford shoes', 'derby shoes', 'panjabi', 'fotua', 'pajama', 'lungi', 'dhoti', 'sherwani', 'koti', 'tupi']);
 export const codedFor = (subtype) => (WOMEN_CODED.has(subtype) ? 'women' : MEN_CODED.has(subtype) ? 'men' : 'all');
 export const suitsWear = (subtype, wear = myWear()) => wear === 'all' || codedFor(subtype) === 'all' || codedFor(subtype) === wear;
 

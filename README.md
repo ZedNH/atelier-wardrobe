@@ -49,6 +49,18 @@ Your data stays on each device. Use **Settings → Export/Import backup** to mov
 - **My Style page**: color-season palette, body & fit guide, **Style DNA** radar with your archetype (e.g. "Modern Classic"), wear-log heatmap and streak, 10 achievements, and a **lookbook** of saved looks (the heart on any outfit).
 - **Design**: editorial redesign with serif display type, line icons, light/dark/auto theme and five accent colors, desktop sidebar and a floating phone nav.
 
+## v1.7: smarter styling, swipe navigation, AI providers
+- **Dress codes**: every occasion has real rules. Gym = athletic wear only (no jeans or shirts). Work = no shorts, joggers or graphic tees. Formal/wedding = no t-shirts, jeans or sneakers. Looks are finished with fitting accessories (watch, belt, sunglasses, bag, tie and pocket square with tailoring). Each look also has an **+ Accessories** button.
+- **New Today page**: compact weather header; sticky day and occasion bar (the occasion you pick stays when you switch to Tomorrow); swipeable look carousel; shortcut grid.
+- **Swipe between tabs** (Today ↔ Closet ↔ Stylist ↔ Try-On) with slide animations and a sliding dock indicator.
+- **All outfits** page: every distinct combination for an occasion, best first.
+- **Closet**: tabs for In closet / Sold / Donated / Lent / Archived with Restore; Select mode to sell, donate, archive or delete many pieces; a remove menu on each item.
+- **Photos**: a Paste button next to every photo picker (the Android app reads the copied image natively), Ctrl+V anywhere, and a camera button on Shop.
+- **More types**: sunglasses (own icon), eyeglasses, smartwatch, backpack, clutch, wallet, necklace, earrings, bracelet, ring, cufflinks, pocket square, track pants, sports shorts, sports bra, crop top, camisole, tunic, flip-flops, slides, wedges, mules, bucket hat, headband.
+- **AI stylist brain (your own key)**: Claude, ChatGPT, Gemini, Grok, DeepSeek or OpenRouter (Settings → AI stylist brain). The Stylist chat sends a text list of your clothes (no photos) and gets outfits back by item.
+- **Buying ideas**: colored product illustrations, “+N outfits”, “pairs with N tops · N shoes”, and a **Find it online** search (Daraz in South Asia, Google Shopping elsewhere).
+- Profile has a Settings button; Backup moved to the bottom of Settings.
+
 ## v1.3: speed, fashion AI, clean cut-outs, best buys
 - **No more freezing**: every AI model runs in a background worker, and long jobs (review queue, re-tagging, gap analysis) pause between items so taps and scrolling stay smooth. Closet grids load small thumbnails only when they scroll into view.
 - **Fashion-tuned AI**: Marqo FashionCLIP (a one-time ~145 MB download, then offline) replaces the general CLIP model. Each photo is read twice (the original and the cut-out) and the results are averaged. On about 150 real shop photos it gets the exact type right about **71%** of the time, up from about 60%. Polos, kurtas, sarees, sunglasses and cargo pants are strong; track pants vs. trousers and some shoes are weaker. **It learns from your corrections**: every item you confirm teaches it your own clothes.

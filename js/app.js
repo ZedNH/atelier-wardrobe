@@ -6,6 +6,7 @@ import { todayStr } from './weather.js';
 import { profile, initials } from './profile.js';
 import { captureInstallEvents, isInstalled } from './install.js';
 import { applyLanguage } from './i18n.js';
+import { initSwipeNav, moveTabIndicator } from './ui/swipe.js';
 
 // capture the one-time install event before anything async runs
 captureInstallEvents(() => refreshInstallChip());
@@ -25,12 +26,13 @@ const routes = {
   me: () => import('./ui/me.js'),
   tryon: () => import('./ui/tryon.js'),
   shop: () => import('./ui/shop.js'),
+  outfits: () => import('./ui/outfits.js'),
   declutter: () => import('./ui/declutter.js'),
   settings: () => import('./ui/settings.js'),
   welcome: () => import('./ui/onboarding.js'),
   profile: () => import('./ui/onboarding.js'),
 };
-const TAB_OF = { today: 'today', closet: 'closet', item: 'closet', add: 'add', review: 'add', builder: 'today', insights: 'insights', plan: 'plan', stylist: 'stylist', me: 'me', tryon: 'tryon', shop: 'shop', declutter: 'insights', settings: 'settings', profile: 'me', welcome: '' };
+const TAB_OF = { today: 'today', closet: 'closet', item: 'closet', add: 'add', review: 'add', builder: 'today', insights: 'insights', plan: 'plan', stylist: 'stylist', me: 'me', tryon: 'tryon', shop: 'shop', outfits: 'today', declutter: 'insights', settings: 'settings', profile: 'me', welcome: '' };
 
 const NAV = [
   ['today', 'Today', 'sun'], ['stylist', 'Stylist', 'sparkles'], ['closet', 'Closet', 'hanger'], ['add', 'Add item', 'plus'],
@@ -44,6 +46,15 @@ function buildNav() {
   $('#sideNav').innerHTML = NAV.map(([k, l, i]) => `<a href="#/${k}" data-tab="${k}" class="${k === 'add' ? 'nav-add' : ''}">${icon(i, 20)}<span>${l}</span></a>`).join('');
   $('#tabs').innerHTML = TABS.map(([k, l, i]) => `<a href="#/${k}" data-tab="${k}" class="${k === 'add' ? 'tab-add' : ''}" aria-label="${l}"><span class="ti">${icon(i, k === 'add' ? 24 : 22)}</span><b>${l}</b></a>`).join('');
   refreshInstallChip();
+  // tapping a tab slides the page in from the side of that tab
+  $('#tabs').addEventListener('click', (e) => {
+    const a = e.target.closest('a[data-tab]'); if (!a) return;
+    const order = TABS.map(([k]) => k); const from = order.indexOf(TAB_OF[parseHash().name]); const to = order.indexOf(a.dataset.tab);
+    if (from >= 0 && to >= 0 && from !== to && a.dataset.tab !== 'add') window.__navDir = to > from ? 'l' : 'r';
+  });
+  initSwipeNav($('#view'), () => parseHash().name);
+  const topH = () => document.documentElement.style.setProperty('--toph', ($('.topbar')?.offsetHeight || 0) + 'px');
+  topH(); addEventListener('resize', () => { topH(); moveTabIndicator(); });
   $('#privacyChip').innerHTML = `${icon('lock', 16)}<div><b>Private by design</b><span>Everything stays on this device</span></div>`;
 }
 export function refreshInstallChip() {
@@ -96,10 +107,12 @@ async function route() {
   const seq = ++routeSeq;
   const loader = routes[r.name] || routes.today;
   $$('[data-tab]').forEach((a) => a.classList.toggle('on', a.dataset.tab === TAB_OF[r.name]));
+  moveTabIndicator();
+  const dir = window.__navDir; window.__navDir = null;
   const view = $('#view');
   try {
     // quick fade-out of the old page while the next module loads, then a soft rise-in
-    const fade = first ? null : (view.classList.add('leave'), new Promise((res) => setTimeout(res, 110)));
+    const fade = first ? null : (view.classList.add(dir ? 'leave-' + dir : 'leave'), new Promise((res) => setTimeout(res, dir ? 150 : 110)));
     const mod = await loader();
     await fade;
     if (seq !== routeSeq) return; // a newer navigation started
@@ -107,7 +120,7 @@ async function route() {
     document.body.dataset.route = r.name;
     view.innerHTML = '';
     if (!r.query.get('keep')) window.scrollTo({ top: 0, behavior: 'instant' });
-    view.classList.remove('leave', 'enter'); void view.offsetWidth; view.classList.add('enter');
+    view.classList.remove('leave', 'leave-l', 'leave-r', 'enter', 'enter-l', 'enter-r'); view.style.transform = ''; view.style.opacity = ''; view.style.transition = ''; void view.offsetWidth; view.classList.add(dir ? 'enter-' + dir : 'enter');
     current = mod; first = false;
     const fn = { item: 'renderItem', review: 'renderReview', welcome: 'renderWelcome', profile: 'renderProfileEdit', add: 'renderCapture', closet: 'renderCloset', settings: 'renderSettings' }[r.name] || 'render';
     await (mod[fn] || mod.render)(view, r);

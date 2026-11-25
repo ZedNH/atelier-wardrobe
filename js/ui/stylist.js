@@ -8,6 +8,11 @@ import { OCCASIONS } from '../enums.js';
 import { profile } from '../profile.js';
 import { esc } from '../util.js';
 import { $, $$, toast, icon, watchLook } from './dom.js';
+import { brainOn, brainSettings, aiStylist, LLM_PROVIDERS } from '../llm.js';
+import { parseRequest } from '../context.js';
+import { weatherFor, todayStr } from '../weather.js';
+import { isWeekend } from '../profile.js';
+import { normalizeBangla } from '../i18n.js';
 
 // conversation survives navigation within the session
 const C = { msgs: [], lastAsk: null, seen: new Set() };
@@ -43,7 +48,11 @@ async function send(view, q) {
   const ref = refine(q, C.lastAsk);
   const ask = ref || q;
   let res;
-  try { res = await answer(ask, { exclude: C.seen }); } catch (e) { console.error(e); res = { html: `<p>Sorry — something went wrong (${esc(e.message || e)}).</p>` }; }
+  const simple = /^(hi|hello|hey|help|what can you do)|weather|laundry|what should i buy|haven.t i worn|cost per wear/i.test(q);
+  if (brainOn() && !simple) {
+    try { res = await askBrain(ask); } catch (e) { console.warn(e); toast('AI stylist: ' + (e.message || e) + ' — using the built-in stylist', 5000); }
+  }
+  if (!res) { try { res = await answer(ask, { exclude: C.seen }); } catch (e) { console.error(e); res = { html: `<p>Sorry — something went wrong (${esc(e.message || e)}).</p>` }; } }
   await new Promise((r) => setTimeout(r, 350));
   typing.remove();
   if (res.outfits?.length) { C.lastAsk = ask; for (const { o } of res.outfits) C.seen.add(outfitKey(o.items)); }
@@ -72,4 +81,16 @@ async function paint(box, m) {
     });
     cards.appendChild(c);
   }
+}
+
+// Ask the user's own AI provider (Claude, ChatGPT, Gemini, Grok…) to pick outfits from the closet
+async function askBrain(q) {
+  const { ctx: pc } = parseRequest(normalizeBangla(q), {});
+  const date = pc.date || todayStr();
+  let weather = null; try { weather = await weatherFor(date); } catch { /* offline */ }
+  const occasion = pc.occasion || (isWeekend(new Date(date + 'T12:00:00').getDay()) ? 'casual' : 'work');
+  const history = C.msgs.filter((m) => m.who === 'me').map((m) => m.html.replace(/<[^>]+>/g, ''));
+  const r = await aiStylist(q, { weather, date, occasionGuess: occasion, history });
+  const s = brainSettings();
+  return { html: `<p>${esc(r.reply)}</p><p class="tiny faint">${icon('sparkles', 12)} ${esc(LLM_PROVIDERS[s.provider]?.label || 'AI')}</p>`, outfits: r.outfits, chips: ['Another option', 'Make it more formal', 'Add accessories'] };
 }

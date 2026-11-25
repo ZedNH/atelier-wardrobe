@@ -1,15 +1,15 @@
-// "Should I buy this?" — share a product screenshot from Daraz, Instagram, Facebook Marketplace or any shop
+// "Should I buy this?" — a product photo or screenshot (tap to choose, take a photo, or paste)
 // (Android share sheet / installed web app share target / upload / paste) and get a verdict against YOUR closet.
 import { state, activeGarments, saveImage, saveGarment, uid, kvGet, kvSet } from '../db.js';
 import { CATEGORIES, CATEGORY_LABEL, SUBTYPES, PATTERNS } from '../enums.js';
 import { adviseItem, makeVirtual, bestBuys, rankCandidates } from '../insights.js';
-import { gicon } from './icons.js';
+import { gicon, productArt } from './icons.js';
 import { recommend } from '../recommender.js';
 import { weatherFor, todayStr } from '../weather.js';
 import { renderOutfit } from '../preview.js';
 import { fileToCanvas, cropCanvas, scaleCanvas, segmentLocal, colorsFromCanvas, canvasToBlob, makeCanvas } from '../vision.js';
 import { makeColor } from '../color.js';
-import { profile, subtypeOptions, colorFit, myWear, myOccasions } from '../profile.js';
+import { profile, subtypeOptions, colorFit, myWear, myOccasions, myRegion } from '../profile.js';
 import { wearsOf } from '../actions.js';
 import * as ai from '../ai.js';
 import { esc, garmentName, fmtMoney, deriveWarmth, deriveSeason, DAY } from '../util.js';
@@ -37,12 +37,12 @@ export async function takeShared() {
 }
 
 export async function render(view, r) {
-  view.innerHTML = `${pageHead('Shop smarter', 'Should I <em>buy</em> this?', 'Share a product screenshot from Daraz, Instagram or any shop — or upload / paste one. I check it against your closet, your colors and your body shape before you spend.')}
+  view.innerHTML = `${pageHead('Shop smarter', 'Should I <em>buy</em> this?', 'Tap to choose a product photo or screenshot — or take a photo, or paste a copied image. I check it against your closet, your colors and your body shape before you spend.')}
     <div class="shop-cols">
       <section class="card" id="inbox">
         <div id="pick">
-          <label class="dropzone" id="dz"><input type="file" accept="image/*" multiple hidden id="file">${icon('image', 34)}<p><b>Choose product screenshots</b></p><p class="small muted">Pick one to check it — or several to see <b>which one to buy</b> · paste (Ctrl+V) · or share to Atelier from any shopping app</p></label>
-          <div class="tips mt small"><div class="row">${icon('info', 14)}<span>Tip: in Daraz or Instagram tap <b>Share → Atelier</b> (Android app), or take a screenshot and share it here.</span></div></div>
+          <label class="dropzone" id="dz"><input type="file" accept="image/*" multiple hidden id="file">${icon('image', 34)}<p><b>Choose product screenshots</b></p><p class="small muted">Tap to choose one photo to check it — or several to see <b>which one to buy</b></p></label>
+          <div class="row mt"><button class="btn small" id="shotCam">${icon('camera', 14)} Take a photo</button></div>
         </div>
         <div id="cropBox" class="hide"></div>
       </section>
@@ -58,8 +58,7 @@ export async function render(view, r) {
   dz.addEventListener('dragleave', () => dz.classList.remove('over'));
   dz.addEventListener('drop', (e) => { e.preventDefault(); dz.classList.remove('over'); loadMany([...e.dataTransfer.files]); });
   renderBestBuys(view);
-  const onPaste = (e) => { const it = [...(e.clipboardData?.items || [])].find((x) => x.type.startsWith('image/')); if (it) load(it.getAsFile()); };
-  document.addEventListener('paste', onPaste); unmountFns.push(() => document.removeEventListener('paste', onPaste));
+  $('#shotCam', view).onclick = async () => { const { cameraModal } = await import('./tryon.js'); cameraModal({ facing: 'environment', timer: 0, title: 'Product photo', guide: 'label' }, (c) => { SH.canvas = c; showCrop(view); }); };
   bindWishlist(view);
   if (r?.query?.get('shared')) { const s = await takeShared(); SH.link = s.text || ''; if (s.blob) load(s.blob); else if (s.text) toast('Got the link — now add a screenshot of the product'); }
 }
@@ -141,13 +140,20 @@ async function compareMany(view, files) {
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 const colorWord = (hex) => (makeColor(hex)?.name || 'this').toLowerCase();
 
-export const bestBuyCard = (r, i) => `<div class="bb" data-cat="${r.cat}">
-      <div class="bb-ico" style="--fill:${r.v.colors[0].hex}">${gicon(r.v.subtype, 40)}${i === 0 ? '<span class="bb-top">Top pick</span>' : ''}</div>
+const PAIR_WORD = { top: 'tops', bottom: 'bottoms', footwear: 'shoes', dress: 'dresses' };
+const shopUrl = (q) => (myRegion() === 'sa' ? `https://www.daraz.com.bd/catalog/?q=${encodeURIComponent(q)}` : `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(q)}`);
+export const bestBuyCard = (r, i) => {
+  const hex = r.v.colors[0].hex; const q = `${makeColor(hex).name} ${r.v.subtype} ${myWear() === 'women' ? 'women' : myWear() === 'men' ? 'men' : ''}`.trim();
+  const pairs = Object.entries(r.pairs || {}).filter(([, n]) => n).map(([c, n]) => `${n} ${PAIR_WORD[c] || c}`).join(' · ');
+  return `<div class="bb" data-cat="${r.cat}">
+      <div class="bb-art" style="--tint:${hex}">${productArt(r.v.subtype, hex, 92)}${i === 0 ? '<span class="bb-top">Top pick</span>' : ''}<span class="bb-n">+${r.joins}<small>outfits</small></span></div>
       <b class="bb-name">${esc(cap(r.v.name))}</b>
-      <span class="bb-n">+${r.joins} <small>outfits</small></span>
+      ${pairs ? `<span class="tiny muted">Pairs with ${pairs}</span>` : ''}
       ${r.fit ? `<span class="tiny ${r.fit.verdict === 'great' ? 'good-t' : r.fit.verdict === 'avoid' ? 'bad-t' : 'muted'}">${r.fit.verdict === 'great' ? 'Great color for you' : r.fit.verdict === 'ok' ? 'Okay color for you' : 'Not your best color'}</span>` : ''}
       ${r.preview.length ? `<div class="bb-with"><span class="tiny muted">Wear with</span>${r.preview.map((g) => `<img data-key="${g.id}:thumb" data-fallback="${g.cutout}" alt="${esc(garmentName(g))}" title="${esc(garmentName(g))}">`).join('')}</div>` : ''}
+      <a class="btn small block bb-find" href="${shopUrl(q)}" target="_blank" rel="noopener">${icon('search', 14)} Find it online</a>
     </div>`;
+};
 
 // "Best buys for your closet": which type + colour would unlock the most outfits with what you own
 async function renderBestBuys(view) {

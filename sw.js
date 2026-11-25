@@ -1,15 +1,15 @@
 // Offline app shell. AI model files are cached separately by Transformers.js (Cache Storage).
-const VERSION = 'wardrobe-v11';
+const VERSION = 'wardrobe-v12';
 const SHELL = [
   './', './index.html', './manifest.webmanifest', './css/app.css',
   './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png',
   './js/app.js', './js/db.js', './js/enums.js', './js/color.js', './js/util.js', './js/weather.js', './js/learning.js',
   './js/recommender.js', './js/actions.js', './js/vision.js', './js/ai.js', './js/pipeline.js', './js/preview.js',
   './js/insights.js', './js/plan.js', './js/context.js', './js/demo.js', './js/profile.js', './js/stylist.js', './js/bodyscan.js', './js/tryon.js', './js/install.js', './js/native.js',
-  './js/i18n.js', './js/sync.js', './js/declutter.js', './js/ai-worker.js', './js/genai.js', './js/carelabel.js', './js/config.js', './js/updater.js',
+  './js/i18n.js', './js/sync.js', './js/declutter.js', './js/ai-worker.js', './js/genai.js', './js/carelabel.js', './js/config.js', './js/updater.js', './js/llm.js',
   './js/ui/dom.js', './js/ui/icons.js', './js/ui/today.js', './js/ui/closet.js', './js/ui/capture.js', './js/ui/builder.js',
   './js/ui/insights.js', './js/ui/plan.js', './js/ui/settings.js', './js/ui/onboarding.js', './js/ui/stylist.js', './js/ui/me.js', './js/ui/tryon.js', './js/ui/installui.js',
-  './js/ui/shop.js', './js/ui/declutter.js', './js/ui/care.js',
+  './js/ui/shop.js', './js/ui/declutter.js', './js/ui/care.js', './js/ui/outfits.js', './js/ui/swipe.js',
 ];
 
 self.addEventListener('install', (e) => {

@@ -318,7 +318,12 @@ export async function bestBuys({ limit = 8, onProgress } = {}) {
   for (const r of out.sort((a, b) => b.score - a.score)) if (!bestPerType.has(r.v.subtype)) bestPerType.set(r.v.subtype, r);
   const perCat = {};
   const list = [...bestPerType.values()].filter((r) => (perCat[r.cat] = (perCat[r.cat] || 0) + 1) <= 3).slice(0, limit);
-  for (const r of list) r.preview = previewOutfit(r.v, pool);
+  const goes = { top: ['bottom', 'footwear'], bottom: ['top', 'footwear'], footwear: ['top', 'bottom'], dress: ['footwear'], outerwear: ['top', 'bottom'] };
+  for (const r of list) {
+    r.preview = previewOutfit(r.v, pool);
+    const occ = OCCASIONS.smart_casual;
+    r.pairs = Object.fromEntries((goes[r.cat] || []).map((c) => [c, pool.filter((g) => g.category === c && quickPair(r.v, g, occ) >= 0.74).length]));
+  }
   return { base, list, tried: cands.length };
 }
 

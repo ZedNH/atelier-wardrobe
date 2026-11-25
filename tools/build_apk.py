@@ -22,7 +22,7 @@ ANDROID_JAR = SDK / 'platforms' / 'android-34' / 'android.jar'
 APP = ROOT / 'android'
 BUILD = ROOT / 'build' / 'apk'
 DIST = ROOT / 'dist'
-VERSION_NAME, VERSION_CODE = '1.6', 7
+VERSION_NAME, VERSION_CODE = '1.7', 8
 KEYSTORE = APP / 'atelier-release.jks'
 KEYPROPS = APP / 'keystore.properties'
 

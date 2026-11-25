@@ -24,6 +24,10 @@ export const SUBTYPES = {
   'sweatshirt':     { cat: 'top', f: 1, w: 3, fit: 'relaxed', wash: 3 },
   'hoodie':         { cat: 'top', f: 1, w: 3, fit: 'relaxed', wash: 3 },
   'activewear top': { cat: 'top', f: 1, w: 1, fit: 'slim', wash: 1, active: true },
+  'sports bra':     { cat: 'top', f: 1, w: 0.5, fit: 'slim', wash: 1, active: true, wear: 'women' },
+  'crop top':       { cat: 'top', f: 1, w: 0.5, fit: 'slim', wash: 1, wear: 'women' },
+  'camisole':       { cat: 'top', f: 2, w: 0.5, fit: 'slim', wash: 1, wear: 'women' },
+  'tunic':          { cat: 'top', f: 2, w: 1.5, fit: 'relaxed', wash: 2 },
   // bottoms
   'jeans':          { cat: 'bottom', f: 2, w: 2, fit: 'regular', wash: 6 },
   'chinos':         { cat: 'bottom', f: 3, w: 2, fit: 'slim', wash: 4 },
@@ -32,6 +36,8 @@ export const SUBTYPES = {
   'skirt':          { cat: 'bottom', f: 3, w: 1, fit: 'regular', wash: 3 },
   'joggers':        { cat: 'bottom', f: 1, w: 2, fit: 'relaxed', wash: 2 },
   'leggings':       { cat: 'bottom', f: 1, w: 2, fit: 'slim', wash: 1, active: true },
+  'track pants':    { cat: 'bottom', f: 1, w: 2, fit: 'regular', wash: 2, active: true },
+  'sports shorts':  { cat: 'bottom', f: 1, w: 0.5, fit: 'regular', wash: 1, active: true },
   'cargo pants':    { cat: 'bottom', f: 2, w: 2, fit: 'relaxed', wash: 4 },
   // outerwear
   'blazer':         { cat: 'outerwear', f: 4, w: 2, fit: 'slim', wash: 12 },
@@ -65,6 +71,10 @@ export const SUBTYPES = {
   'boots':          { cat: 'footwear', f: 2, w: 4, fit: 'regular' },
   'sandals':        { cat: 'footwear', f: 1, w: 1, fit: 'regular', noRain: true },
   'heels':          { cat: 'footwear', f: 4, w: 1, fit: 'regular' },
+  'flip-flops':     { cat: 'footwear', f: 1, w: 0.5, fit: 'regular', noRain: true },
+  'slides':         { cat: 'footwear', f: 1, w: 0.5, fit: 'regular' },
+  'wedges':         { cat: 'footwear', f: 3, w: 1, fit: 'regular', wear: 'women' },
+  'mules':          { cat: 'footwear', f: 3, w: 1, fit: 'regular' },
   'flats':          { cat: 'footwear', f: 3, w: 1, fit: 'regular' },
   // accessories
   'belt':           { cat: 'accessory', f: 3, w: 0, fit: 'regular' },
@@ -74,10 +84,23 @@ export const SUBTYPES = {
   'tie':            { cat: 'accessory', f: 5, w: 0, fit: 'regular' },
   'sunglasses':     { cat: 'accessory', f: 2, w: 0, fit: 'regular', sun: true },
   'jewelry':        { cat: 'accessory', f: 3, w: 0, fit: 'regular' },
+  'eyeglasses':     { cat: 'accessory', f: 3, w: 0, fit: 'regular' },
+  'smartwatch':     { cat: 'accessory', f: 2, w: 0, fit: 'regular' },
+  'backpack':       { cat: 'accessory', f: 1, w: 0, fit: 'regular' },
+  'clutch':         { cat: 'accessory', f: 4, w: 0, fit: 'regular', wear: 'women' },
+  'wallet':         { cat: 'accessory', f: 3, w: 0, fit: 'regular' },
+  'necklace':       { cat: 'accessory', f: 3, w: 0, fit: 'regular' },
+  'earrings':       { cat: 'accessory', f: 3, w: 0, fit: 'regular', wear: 'women' },
+  'bracelet':       { cat: 'accessory', f: 3, w: 0, fit: 'regular' },
+  'ring':           { cat: 'accessory', f: 3, w: 0, fit: 'regular' },
+  'cufflinks':      { cat: 'accessory', f: 5, w: 0, fit: 'regular', wear: 'men' },
+  'pocket square':  { cat: 'accessory', f: 4, w: 0, fit: 'regular', wear: 'men' },
   // headwear
   'cap':            { cat: 'headwear', f: 1, w: 0.5, fit: 'regular' },
   'beanie':         { cat: 'headwear', f: 1, w: 2, fit: 'regular', cold: true },
   'hat':            { cat: 'headwear', f: 3, w: 0.5, fit: 'regular', sun: true },
+  'bucket hat':     { cat: 'headwear', f: 1, w: 0.5, fit: 'regular', sun: true },
+  'headband':       { cat: 'headwear', f: 1, w: 0, fit: 'regular' },
   // ---- South Asian wear (trad = traditional; favoured for Eid, weddings, Boishakh…) ----
   'kurti':          { cat: 'top', f: 3, w: 1.5, fit: 'regular', wash: 2, trad: true },
   'kurta':          { cat: 'top', f: 3, w: 1.5, fit: 'regular', wash: 2, trad: true },
@@ -141,6 +164,7 @@ export const OCCASIONS = {
   puja:          { label: 'Puja', f: 4, min: 3, max: 5, trad: 1, region: 'sa', colors: ['#c8302c', '#f7f7f5', '#c99a2e', '#e07a2e'], note: 'red, white and gold for puja' },
   jummah:        { label: 'Jummah', f: 3, min: 2, max: 4, trad: 1, region: 'sa', modest: 1, colors: ['#f7f7f5', '#efe6d2', '#c4c6c8', '#9cc3e6'], note: 'clean, modest whites for Jummah' },
 };
+for (const [k, o] of Object.entries(OCCASIONS)) o.key = k;
 export const occasionsFor = (region) => Object.entries(OCCASIONS).filter(([, o]) => !o.region || o.region === region);
 
 // Stated dress codes -> occasion keys
