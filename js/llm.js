@@ -1,4 +1,4 @@
-// "AI brain" with your own key: Claude, ChatGPT (OpenAI), Gemini, Grok (xAI), DeepSeek or OpenRouter.
+// "AI brain" with your own key: Claude, ChatGPT (OpenAI), Gemini, Grok (xAI), Z.ai (GLM), DeepSeek or OpenRouter.
 // The stylist sends a compact text list of your clothes (no photos) plus the day's context, and the model picks
 // outfits by item id. Keys stay on this device and go only to the provider you chose. In the Android app the
 // request goes through the native layer (no browser CORS limits).
@@ -14,10 +14,11 @@ export const LLM_PROVIDERS = {
   openai: { label: 'ChatGPT (OpenAI)', model: 'gpt-5-mini', keyUrl: 'https://platform.openai.com/api-keys', note: 'Any chat model name from your OpenAI account works.' },
   gemini: { label: 'Gemini (Google)', model: 'gemini-2.5-flash', keyUrl: 'https://aistudio.google.com/app/apikey', note: 'Google AI Studio has a free tier.' },
   grok: { label: 'Grok (xAI)', model: 'grok-4', keyUrl: 'https://console.x.ai/', note: 'Any Grok model name from your xAI account works.' },
+  zai: { label: 'Z.ai (GLM)', model: 'glm-4.6', keyUrl: 'https://z.ai/manage-apikey/apikey-list', note: 'Zhipu GLM models — any GLM model name from your Z.ai account works (e.g. glm-4.6, glm-4.5-air).' },
   deepseek: { label: 'DeepSeek', model: 'deepseek-chat', keyUrl: 'https://platform.deepseek.com/api_keys', note: 'Low cost.' },
   openrouter: { label: 'OpenRouter (many models)', model: 'openrouter/auto', keyUrl: 'https://openrouter.ai/keys', note: 'One key for hundreds of models — set any model id, e.g. anthropic/claude-sonnet-5-5.' },
 };
-const OPENAI_STYLE = { openai: 'https://api.openai.com/v1/chat/completions', grok: 'https://api.x.ai/v1/chat/completions', deepseek: 'https://api.deepseek.com/chat/completions', openrouter: 'https://openrouter.ai/api/v1/chat/completions' };
+const OPENAI_STYLE = { openai: 'https://api.openai.com/v1/chat/completions', grok: 'https://api.x.ai/v1/chat/completions', deepseek: 'https://api.deepseek.com/chat/completions', openrouter: 'https://openrouter.ai/api/v1/chat/completions', zai: 'https://api.z.ai/api/paas/v4/chat/completions' };
 
 const KEY = 'ai-brain';
 export function brainSettings() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch { return {}; } }
@@ -71,7 +72,7 @@ export async function callLLM({ system, user, json = true }, s = brainSettings()
   }
   const url = OPENAI_STYLE[prov]; if (!url) throw new Error('Unknown provider');
   const body = { model, messages: [{ role: 'system', content: system }, { role: 'user', content: user }] };
-  if (json && prov !== 'openrouter') body.response_format = { type: 'json_object' };
+  if (json && !['openrouter', 'zai'].includes(prov)) body.response_format = { type: 'json_object' };
   const r = await post(url, { Authorization: 'Bearer ' + key, ...(prov === 'openrouter' ? { 'X-Title': 'Atelier wardrobe' } : {}) }, body);
   if (!r.ok) throw new Error(await errText(r));
   const j = await r.json();

@@ -49,6 +49,17 @@ Your data stays on each device. Use **Settings → Export/Import backup** to mov
 - **My Style page**: color-season palette, body & fit guide, **Style DNA** radar with your archetype (e.g. "Modern Classic"), wear-log heatmap and streak, 10 achievements, and a **lookbook** of saved looks (the heart on any outfit).
 - **Design**: editorial redesign with serif display type, line icons, light/dark/auto theme and five accent colors, desktop sidebar and a floating phone nav.
 
+## v1.8: Style hub
+- **Daily mirror check-in** with a look score, streaks, and a **style diary** calendar of your photos.
+- **Closet score (0–100)**: versatility, occasions covered, clothes you actually wear, colors that suit you, and balance, with tips and the fastest boost.
+- **Budget tracker**: monthly budget, spend per month, purchases list, days since last buy; Shop warns when a buy would break the budget.
+- **Style challenges** with badges: 7 colors in 7 days, Forgotten five, Mirror week, No repeats, Accessorize, No-buy month, Tonal week. Progress comes from your wear log and check-ins.
+- **Inspiration copier**: rebuild any photo's look from your closet, and see the missing piece with “+N outfits” and Find it.
+- **Photo booth**: 1080×1920 story cards (Editorial, Polaroid, Bold) with your photo, the outfit and its colors. The Share button on every look opens it.
+- **Ask a friend**: an “A or B?” poll card for WhatsApp; tap the winner to log it.
+- **Wardrobe Wrapped**: tap-through story of your year: days styled, most-worn piece, color of the year, best value, style personality, streaks. Each card can be shared.
+- **Z.ai (GLM)** added to the AI stylist providers.
+
 ## v1.7: smarter styling, swipe navigation, AI providers
 - **Dress codes**: every occasion has real rules. Gym = athletic wear only (no jeans or shirts). Work = no shorts, joggers or graphic tees. Formal/wedding = no t-shirts, jeans or sneakers. Looks are finished with fitting accessories (watch, belt, sunglasses, bag, tie and pocket square with tailoring). Each look also has an **+ Accessories** button.
 - **New Today page**: compact weather header; sticky day and occasion bar (the occasion you pick stays when you switch to Tomorrow); swipeable look carousel; shortcut grid.

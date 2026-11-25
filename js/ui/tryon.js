@@ -247,7 +247,7 @@ function rateTab(box) {
   $('#cam', box).onclick = () => cameraModal({ facing: 'environment', timer: 3, title: 'Mirror photo', guide: 'body' }, run);
 }
 
-async function rateLook(canvas, out) {
+export async function rateLook(canvas, out) {
   const S = await loadSeg();
   const res = S.segment(canvas); const cm = res.categoryMask; const w = cm.width, h = cm.height; const cat = cm.getAsUint8Array().slice(); res.close?.();
   const d = canvas.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, canvas.width, canvas.height).data;
@@ -291,4 +291,5 @@ async function rateLook(canvas, out) {
   </div></div></div>`;
   canvas.style.cssText = 'width:100%;border-radius:18px'; $('#rimg', out).appendChild(canvas);
   const lg = $('#logit', out); if (lg) lg.onclick = async () => { const sc = scoreOutfit(matched, { occasion: 'casual', date: todayStr() }); await logWear(matched, { ctx: { occasion: 'casual', date: todayStr() }, features: sc.features, source: 'manual' }); lg.disabled = true; lg.textContent = 'Logged'; toast('Logged — thanks!'); };
+  return { total, matched, top: cu, bottom: cl };
 }

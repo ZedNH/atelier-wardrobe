@@ -210,6 +210,7 @@ async function verdict(view, spec) {
   await saveImage('tmp:shop', await canvasToBlob(SH.cut, 'image/png'));
   state.imageUrls.delete('tmp:shop');
   const r = adviseItem(v, spec.emb);
+  let bNote = null; try { bNote = await (await import('../hub.js')).budgetNote(spec.price); } catch { /* optional */ }
   // projected cost per wear: how often you actually wear this category
   const pool = activeGarments();
   const same = pool.filter((g) => g.category === v.category);
@@ -234,6 +235,7 @@ async function verdict(view, spec) {
     <ul class="tips mt">
       ${r.colorNote ? `<li>${icon('palette', 16)}<span>${esc(r.colorNote)}</span></li>` : p.season ? '' : `<li>${icon('palette', 16)}<span><a href="#/profile?step=color">Set your colors</a> to get a color verdict.</span></li>`}
       ${bodyTip(v, p)}
+      ${bNote ? `<li>${icon('bag', 16)}<span class="${bNote.tone === 'bad' ? 'bad-t' : ''}">${esc(bNote.text)}</span></li>` : ''}
       ${r.dupes.length ? `<li>${icon('info', 16)}<span>You already own ${r.dupes.length === 1 ? `the ${esc(garmentName(r.dupes[0]))}` : r.dupes.length + ' similar pieces'} — think twice.</span></li>` : ''}
       ${SH.link ? `<li>${icon('share', 16)}<span class="tiny" style="word-break:break-all">${esc(SH.link)}</span></li>` : ''}
     </ul>

@@ -84,7 +84,7 @@ export async function renderSettings(view, r) {
 
 
     <section class="card" id="brain">${head('sparkles', 'AI stylist brain', `<span class="pill ${brainSettings().key ? 'good' : ''}">${brainSettings().key ? 'On' : 'Optional'}</span>`)}
-      <p class="small muted" style="margin-top:0">Connect your own AI — Claude, ChatGPT, Gemini, Grok, DeepSeek or OpenRouter — and the Stylist chat asks it to pick outfits from your closet. Only a text list of your clothes is sent (no photos). Your key stays on this device; the provider bills your account.</p>
+      <p class="small muted" style="margin-top:0">Connect your own AI — Claude, ChatGPT, Gemini, Grok, Z.ai (GLM), DeepSeek or OpenRouter — and the Stylist chat asks it to pick outfits from your closet. Only a text list of your clothes is sent (no photos). Your key stays on this device; the provider bills your account.</p>
       <div class="form">
         <label class="f">Provider${select('bprov', Object.entries(LLM_PROVIDERS).map(([k, v]) => [k, v.label]), brainSettings().provider || 'claude')}</label>
         <label class="f">Model<input id="bmodel" value="${esc(brainSettings().model || LLM_PROVIDERS[brainSettings().provider || 'claude'].model)}"></label>

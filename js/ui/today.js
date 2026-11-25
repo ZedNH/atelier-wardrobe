@@ -48,7 +48,7 @@ export async function render(view, r) {
   view.innerHTML = `
     <section class="td-head">
       <div class="td-hi"><p class="eyebrow">${new Date(S.date + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</p>
-        <h1>${greeting}${name ? `, <em>${esc(name)}</em>` : ''}</h1></div>
+        <h1>${greeting}${name ? `, <em>${esc(name)}</em>` : ''}</h1><a class="streak-chip hide" id="streakChip" href="#/hub"></a></div>
       <div class="td-wx" id="wxCard"><div class="row"><div class="spinner sm"></div><span class="muted small">Weather…</span></div></div>
     </section>
     ${pending ? `<a class="banner" href="#/review"><span class="row nowrap">${icon('search', 18)}<span><b>${pending}</b> new item${pending > 1 ? 's' : ''} waiting for a quick check</span></span><span class="btn small primary">Review</span></a>` : ''}
@@ -76,7 +76,9 @@ export async function render(view, r) {
       <a href="#/builder">${icon('layers', 20)}<span>Build</span></a>
       <a href="#/plan">${icon('calendar', 20)}<span>Plan week</span></a>
       <a href="#/plan?tab=trip">${icon('suitcase', 20)}<span>Pack trip</span></a>
-      <a href="#/tryon?tab=rate">${icon('target', 20)}<span>Rate look</span></a>
+      <a href="#/hub">${icon('camera', 20)}<span>Check-in</span></a>
+      <a href="#/hub">${icon('star', 20)}<span>Style hub</span></a>
+      <a href="#/hub?tool=poll">${icon('users', 20)}<span>Ask a friend</span></a>
       <a href="#/shop">${icon('bag', 20)}<span>Shop</span></a>
       <a href="#/declutter">${icon('leaf', 20)}<span>Declutter</span></a>
       <a href="#/insights">${icon('chart', 20)}<span>Insights</span></a>
@@ -84,6 +86,7 @@ export async function render(view, r) {
       <button id="qaLaundry">${icon('laundry', 20)}<span>Laundry${laundryN ? ` · ${laundryN}` : ''}</span></button>
     </section>
     ${enough ? `<section class="section card" id="buyTeaser"><div class="card-h"><h2>${icon('bag', 18)} What to buy next</h2><a class="btn small" href="#/shop">See all</a></div><p class="small muted" style="margin-top:0">One new piece that would unlock the most new outfits with what you already own.</p><div class="bb-grid" id="buyList"><div class="skeleton" style="height:120px"></div></div><a class="btn block mt" href="#/shop">${icon('image', 16)} Check something you want to buy</a></section>` : ''}`;
+  import('../hub.js').then(async (H) => { const st = H.streakOf((await H.checkins()).map((c) => c.date)); const ch = $('#streakChip', view); if (!ch) return; ch.classList.remove('hide'); ch.innerHTML = st.doneToday ? `${icon('sparkles', 14)} ${st.current}-day streak ✓` : st.current ? `${icon('sparkles', 14)} ${st.current}-day streak — check in today` : `${icon('camera', 14)} Start a daily check-in streak`; }).catch(() => {});
   if (enough) setTimeout(() => buyTeaser(view), 1500); // after the looks, in the background
 
   // switching the day keeps the occasion you picked (only an unpicked day falls back to work/weekend/calendar)
@@ -247,7 +250,7 @@ export async function outfitCard(o, row, ctx, getReplace, n = 1) {
       el.querySelector('.lt .tiny').textContent = `${o.items.length} pieces`;
       el._look = [o.items, el._look?.[1]];
       toast('Added: ' + extra.map((g) => garmentName(g)).join(', '));
-    } else if (a === 'share') { const r = await shareOutfit(o.items, { caption: o.rationale, mode: state.settings.view, chip: ctx.weather ? fmtTemp(ctx.weather.feels) : null }); if (r === 'downloaded') toast('Outfit card saved as an image.'); }
+    } else if (a === 'share') { (await import('./hub.js')).photoBooth(o.items, { caption: `Look ${String(n).padStart(2, '0')} · ${OCCASIONS[ctx.occasion]?.label || ''}` }); } else if (a === 'share-plain') { const r = await shareOutfit(o.items, { caption: o.rationale, mode: state.settings.view, chip: ctx.weather ? fmtTemp(ctx.weather.feels) : null }); if (r === 'downloaded') toast('Outfit card saved as an image.'); }
   });
   return el;
 }

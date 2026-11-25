@@ -401,7 +401,7 @@ public class MainActivity extends Activity {
                 int status = 0; String out;
                 try {
                     Uri u = Uri.parse(url); String h = String.valueOf(u.getHost());
-                    String[] allowed = {"api.anthropic.com", "api.openai.com", "generativelanguage.googleapis.com", "api.x.ai", "api.deepseek.com", "openrouter.ai"};
+                    String[] allowed = {"api.anthropic.com", "api.openai.com", "generativelanguage.googleapis.com", "api.x.ai", "api.deepseek.com", "openrouter.ai", "api.z.ai"};
                     boolean ok = "https".equals(u.getScheme()); boolean listed = false;
                     for (String a : allowed) if (h.equals(a)) listed = true;
                     if (!ok || !listed) throw new IOException("Blocked address");

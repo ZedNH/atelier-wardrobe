@@ -27,16 +27,17 @@ const routes = {
   tryon: () => import('./ui/tryon.js'),
   shop: () => import('./ui/shop.js'),
   outfits: () => import('./ui/outfits.js'),
+  hub: () => import('./ui/hub.js'),
   declutter: () => import('./ui/declutter.js'),
   settings: () => import('./ui/settings.js'),
   welcome: () => import('./ui/onboarding.js'),
   profile: () => import('./ui/onboarding.js'),
 };
-const TAB_OF = { today: 'today', closet: 'closet', item: 'closet', add: 'add', review: 'add', builder: 'today', insights: 'insights', plan: 'plan', stylist: 'stylist', me: 'me', tryon: 'tryon', shop: 'shop', outfits: 'today', declutter: 'insights', settings: 'settings', profile: 'me', welcome: '' };
+const TAB_OF = { today: 'today', closet: 'closet', item: 'closet', add: 'add', review: 'add', builder: 'today', insights: 'insights', plan: 'plan', stylist: 'stylist', me: 'me', tryon: 'tryon', shop: 'shop', outfits: 'today', hub: 'hub', declutter: 'insights', settings: 'settings', profile: 'me', welcome: '' };
 
 const NAV = [
   ['today', 'Today', 'sun'], ['stylist', 'Stylist', 'sparkles'], ['closet', 'Closet', 'hanger'], ['add', 'Add item', 'plus'],
-  ['tryon', 'Try-On', 'figure'], ['shop', 'Shop smarter', 'bag'], ['plan', 'Plan', 'calendar'], ['insights', 'Insights', 'chart'], ['me', 'My style', 'user'], ['settings', 'Settings', 'gear'],
+  ['tryon', 'Try-On', 'figure'], ['hub', 'Style hub', 'star'], ['shop', 'Shop smarter', 'bag'], ['plan', 'Plan', 'calendar'], ['insights', 'Insights', 'chart'], ['me', 'My style', 'user'], ['settings', 'Settings', 'gear'],
 ];
 const TABS = [['today', 'Today', 'sun'], ['closet', 'Closet', 'hanger'], ['add', 'Add', 'plus'], ['stylist', 'Stylist', 'sparkles'], ['tryon', 'Try-On', 'figure']];
 
