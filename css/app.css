@@ -869,3 +869,7 @@ main.enter-r { animation: slideFromL .34s cubic-bezier(.2,.8,.2,1) both; }
 .wrap-stage .wrap-c { width: 100%; display: block; animation: fade .35s; }
 .wrap-nav { position: absolute; z-index: 1; top: 0; bottom: 0; width: 40%; background: none; border: 0; cursor: pointer; }
 .wrap-nav.l { left: 0; } .wrap-nav.r { right: 0; width: 60%; }
+
+.model-row { display: flex; gap: 6px; align-items: stretch; }
+.model-row input { flex: 1; min-width: 0; }
+.model-row .btn { flex: none; }

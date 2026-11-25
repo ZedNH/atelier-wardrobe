@@ -28,24 +28,25 @@ export const brainOn = () => { const s = brainSettings(); return !!(s.key && s.p
 // ---------- transport: native in the Android app, fetch on the web ----------
 let seq = 0; const waiting = new Map();
 window.__httpDone = (id, status, body) => { const w = waiting.get(id); if (w) { waiting.delete(id); w({ status, body }); } };
-async function post(url, headers, body, timeoutMs = 90000) {
+async function request(method, url, headers, body, timeoutMs = 90000) {
   const B = window.AndroidBridge;
   if (B?.httpRequest) {
     const id = 'h' + ++seq;
     const p = new Promise((res) => waiting.set(id, res));
-    B.httpRequest(id, 'POST', url, JSON.stringify(headers), JSON.stringify(body));
+    B.httpRequest(id, method, url, JSON.stringify(headers), body == null ? null : JSON.stringify(body));
     const r = await Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('The AI took too long — try again')), timeoutMs))]);
     if (r.status === 0) throw new Error(r.body || 'Network error');
     return { ok: r.status >= 200 && r.status < 300, status: r.status, json: () => JSON.parse(r.body || '{}') };
   }
   const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), timeoutMs);
   try {
-    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify(body), signal: ctl.signal });
+    const r = await fetch(url, { method, headers: method === 'GET' ? headers : { 'Content-Type': 'application/json', ...headers }, body: body == null ? undefined : JSON.stringify(body), signal: ctl.signal });
     return { ok: r.ok, status: r.status, json: () => r.json() };
   } catch (e) {
     throw new Error(e.name === 'AbortError' ? 'The AI took too long — try again' : 'Could not reach the AI provider (offline, or the website blocks this provider — the Android app always works)');
   } finally { clearTimeout(t); }
 }
+const post = (url, headers, body, ms) => request('POST', url, headers, body, ms);
 const errText = async (r) => { try { const j = await r.json(); return j.error?.message || j.message || JSON.stringify(j).slice(0, 200); } catch { return 'HTTP ' + r.status; } };
 
 export async function callLLM({ system, user, json = true }, s = brainSettings()) {
@@ -119,4 +120,53 @@ My request: ${question}`;
     outfits.push({ o: { items, ...scoreOutfit(items, ctx), rationale: o.why || '', ai: true }, ctx });
   }
   return { reply: String(j.reply || ''), outfits };
+}
+
+// ---------- which models does this key have? ----------
+// Known models are shown straight away; with a key, the provider's own model list is fetched so new ones
+// (e.g. a newer GLM, GPT or Claude) appear without an app update.
+export const KNOWN_MODELS = {
+  claude: ['claude-opus-5-5', 'claude-sonnet-5-5', 'claude-haiku-5-5', 'claude-fable-5-2', 'claude-opus-5', 'claude-sonnet-5'],
+  openai: ['gpt-5', 'gpt-5-mini', 'gpt-5-nano', 'gpt-4.1', 'gpt-4.1-mini', 'gpt-4o-mini'],
+  gemini: ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.5-flash-lite'],
+  grok: ['grok-4', 'grok-4-fast', 'grok-3-mini'],
+  zai: ['glm-5.3', 'glm-4.6', 'glm-4.5', 'glm-4.5-air', 'glm-4.5-flash'],
+  deepseek: ['deepseek-chat', 'deepseek-reasoner'],
+  openrouter: ['openrouter/auto', 'anthropic/claude-sonnet-5-5', 'openai/gpt-5-mini', 'google/gemini-2.5-flash', 'z-ai/glm-4.6'],
+};
+const MODEL_URL = {
+  openai: 'https://api.openai.com/v1/models', grok: 'https://api.x.ai/v1/models', deepseek: 'https://api.deepseek.com/models',
+  openrouter: 'https://openrouter.ai/api/v1/models', zai: 'https://api.z.ai/api/paas/v4/models',
+};
+// keep chat/text models only (no embeddings, audio, image, moderation…)
+const CHATTY = (id) => !/embed|whisper|tts|audio|dall-e|image|moderation|realtime|transcribe|search|davinci|babbage|-vision-preview|rerank|computer-use/i.test(id);
+export async function listModels(s = brainSettings()) {
+  const prov = s.provider || 'claude'; const key = s.key;
+  if (!key && prov !== 'openrouter') return { models: KNOWN_MODELS[prov] || [], live: false };
+  let ids = [];
+  if (prov === 'claude') {
+    const r = await request('GET', 'https://api.anthropic.com/v1/models?limit=100', { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' }, null, 30000);
+    if (!r.ok) throw new Error(await errText(r));
+    ids = ((await r.json()).data || []).map((m) => m.id);
+  } else if (prov === 'gemini') {
+    const r = await request('GET', 'https://generativelanguage.googleapis.com/v1beta/models?pageSize=200', { 'x-goog-api-key': key }, null, 30000);
+    if (!r.ok) throw new Error(await errText(r));
+    ids = ((await r.json()).models || []).filter((m) => (m.supportedGenerationMethods || []).includes('generateContent')).map((m) => m.name.replace(/^models\//, ''));
+  } else {
+    const r = await request('GET', MODEL_URL[prov], key ? { Authorization: 'Bearer ' + key } : {}, null, 30000);
+    if (!r.ok) throw new Error(await errText(r));
+    const j = await r.json(); ids = (j.data || j.models || []).map((m) => m.id || m.name).filter(Boolean);
+  }
+  ids = [...new Set(ids.filter(CHATTY))];
+  if (!ids.length) return { models: KNOWN_MODELS[prov] || [], live: false };
+  return { models: sortModels(ids), live: true };
+}
+// newest / biggest version first: glm-5.3 before glm-4.6, gpt-5 before gpt-4.1
+// version = first small number (glm-5.3 -> 5.3, gpt-4.1 -> 4.1); 4+ digit dates like -2603 are ignored
+const verOf = (id) => { const m = id.replace(/^[^/]*\//, '').match(/(?:^|[^\d])(\d{1,2}(?:\.\d{1,2})?)(?!\d)/); return m ? parseFloat(m[1]) : 0; };
+export const sortModels = (ids) => ids.slice().sort((a, b) => (b === 'openrouter/auto') - (a === 'openrouter/auto') || (a.split('/')[0] !== b.split('/')[0] && a.includes('/') && b.includes('/') ? a.localeCompare(b) : verOf(b) - verOf(a) || a.length - b.length || a.localeCompare(b)));
+// For GLM, auto-pick the newest general model the key can use
+export function bestModel(prov, ids) {
+  if (prov === 'zai') return ids.filter((x) => /^glm-\d/i.test(x) && !/v$|vision|air|flash|x$/i.test(x)).sort((a, b) => verOf(b) - verOf(a))[0] || ids[0];
+  return null;
 }

@@ -1,5 +1,5 @@
 // Offline app shell. AI model files are cached separately by Transformers.js (Cache Storage).
-const VERSION = 'wardrobe-v13';
+const VERSION = 'wardrobe-v14';
 const SHELL = [
   './', './index.html', './manifest.webmanifest', './css/app.css',
   './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png',

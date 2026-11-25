@@ -16,7 +16,8 @@ import { isApp } from '../native.js';
 import { modal } from './dom.js';
 import { checkForUpdate, currentVersion } from '../updater.js';
 import { UPDATE_REPO } from '../config.js';
-import { LLM_PROVIDERS, brainSettings, saveBrainSettings, testBrain } from '../llm.js';
+import { LLM_PROVIDERS, brainSettings, saveBrainSettings, testBrain, listModels, bestModel, KNOWN_MODELS } from '../llm.js';
+import { openPicker } from './dom.js';
 
 const ACCENTS = [['terracotta', '#b4532a'], ['sage', '#4f6f52'], ['cobalt', '#2f4dba'], ['rose', '#b5446e'], ['noir', '#171412']];
 
@@ -87,7 +88,7 @@ export async function renderSettings(view, r) {
       <p class="small muted" style="margin-top:0">Connect your own AI — Claude, ChatGPT, Gemini, Grok, Z.ai (GLM), DeepSeek or OpenRouter — and the Stylist chat asks it to pick outfits from your closet. Only a text list of your clothes is sent (no photos). Your key stays on this device; the provider bills your account.</p>
       <div class="form">
         <label class="f">Provider${select('bprov', Object.entries(LLM_PROVIDERS).map(([k, v]) => [k, v.label]), brainSettings().provider || 'claude')}</label>
-        <label class="f">Model<input id="bmodel" value="${esc(brainSettings().model || LLM_PROVIDERS[brainSettings().provider || 'claude'].model)}"></label>
+        <div class="f">Model<div class="model-row"><input id="bmodel" aria-label="Model" autocomplete="off" value="${esc(brainSettings().model || LLM_PROVIDERS[brainSettings().provider || 'claude'].model)}"><button type="button" class="btn small" id="bpick">${icon('chevDown', 14)} Models</button></div><span class="tiny muted" id="bmstat">Tap Models to see what your key can use — or type any model name.</span></div>
         <label class="f" style="grid-column:1/-1">API key<input id="bkey" type="password" autocomplete="off" placeholder="Paste your API key" value="${esc(brainSettings().key || '')}"></label>
       </div>
       <p class="tiny muted mt" id="bnote">${esc(LLM_PROVIDERS[brainSettings().provider || 'claude'].note)} <a href="${LLM_PROVIDERS[brainSettings().provider || 'claude'].keyUrl}" target="_blank" rel="noopener">Get a key</a></p>
@@ -120,10 +121,34 @@ export async function renderSettings(view, r) {
   bp.onchange = () => { const P = LLM_PROVIDERS[bp.value]; $('#bmodel', view).value = P.model; $('#bnote', view).innerHTML = `${esc(P.note)} <a href="${P.keyUrl}" target="_blank" rel="noopener">Get a key</a>`; };
   const bget = () => ({ provider: bp.value, model: $('#bmodel', view).value.trim() || LLM_PROVIDERS[bp.value].model, key: $('#bkey', view).value.trim(), enabled: true });
   $('#bsave', view).onclick = () => { saveBrainSettings(bget()); toast(bget().key ? 'AI stylist on — ask the Stylist anything' : 'Saved'); renderSettings(view, r); };
+  // model list: the provider's own list when a key is entered (new models appear automatically), else known models
+  let modelCache = { prov: null, key: null, list: null, live: false };
+  const loadModels = async (quiet = false) => {
+    const s = bget(); const st = $('#bmstat', view);
+    if (modelCache.list && modelCache.prov === s.provider && modelCache.key === s.key) return modelCache;
+    st.innerHTML = '<span class="spinner sm"></span> Looking up models…';
+    try { const r = await listModels(s); modelCache = { prov: s.provider, key: s.key, list: r.models, live: r.live }; st.textContent = r.live ? `${r.models.length} models available${s.key ? ' on your key' : ''}` : 'Common models — add your key to see the full list'; }
+    catch (err) { modelCache = { prov: s.provider, key: s.key, list: KNOWN_MODELS[s.provider] || [], live: false }; st.textContent = quiet ? 'Could not load the model list — showing common models' : 'Could not load your model list (' + (err.message || err) + ') — showing common models'; }
+    // GLM: switch to the newest model the key has, unless you picked one yourself
+    const m = $('#bmodel', view); const auto = bestModel(s.provider, modelCache.list);
+    if (auto && modelCache.live && (m.value === LLM_PROVIDERS[s.provider].model || !modelCache.list.includes(m.value)) && m.value !== auto) { m.value = auto; toast(`Using ${auto} — the newest model on your key`); }
+    return modelCache;
+  };
+  $('#bpick', view).onclick = async () => {
+    const { list } = await loadModels();
+    const cur = $('#bmodel', view).value.trim();
+    const sel = document.createElement('select'); sel.setAttribute('aria-label', 'Model');
+    const opts = [...new Set([cur, ...list].filter(Boolean))];
+    sel.innerHTML = opts.map((x) => `<option value="${esc(x)}" ${x === cur ? 'selected' : ''}>${esc(x)}</option>`).join('') + '<option value="__custom">Type another model name…</option>';
+    sel.onchange = () => { if (sel.value === '__custom') { const i = $('#bmodel', view); i.select(); i.focus(); } else $('#bmodel', view).value = sel.value; };
+    sel.style.display = 'none'; view.appendChild(sel); openPicker(sel); setTimeout(() => sel.remove(), 60000);
+  };
+  bp.addEventListener('change', () => { modelCache = { prov: null }; $('#bmstat', view).textContent = 'Tap Models to see what your key can use — or type any model name.'; });
+  $('#bkey', view).addEventListener('change', () => { if ($('#bkey', view).value.trim()) { modelCache = { prov: null }; loadModels(true); } });
   $('#btest', view).onclick = async (e) => {
     const b = e.currentTarget; const s = bget(); if (!s.key) return toast('Paste your API key first');
     b.disabled = true; b.innerHTML = '<span class="spinner sm"></span> Testing…';
-    try { await testBrain(s); saveBrainSettings(s); toast('Connected — the Stylist now uses ' + LLM_PROVIDERS[s.provider].label, 4000); } catch (err) { toast('Not working: ' + (err.message || err), 6000); }
+    try { await loadModels(true); s.model = $('#bmodel', view).value.trim() || s.model; await testBrain(s); saveBrainSettings(s); toast('Connected — the Stylist now uses ' + LLM_PROVIDERS[s.provider].label, 4000); } catch (err) { toast('Not working: ' + (err.message || err), 6000); }
     b.disabled = false; b.innerHTML = `${icon('sparkles', 14)} Test`;
   };
   const bd = $('#bdel', view); if (bd) bd.onclick = () => { saveBrainSettings({}); toast('Key removed'); renderSettings(view, r); };
